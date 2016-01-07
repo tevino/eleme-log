@@ -1,5 +1,7 @@
 # Log
 
+`go get github.com/eleme/log`
+
 ## Features
 
 - Level
