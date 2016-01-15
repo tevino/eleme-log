@@ -21,8 +21,9 @@ const (
 )
 
 var (
-	globalLevel = NOTSET
-	logLevel    string
+	globalLevel    = NOTSET
+	logLevel       string
+	defaultFlagSet *flag.FlagSet = flag.CommandLine
 )
 
 var LevelName = map[LevelType]string{
@@ -43,11 +44,7 @@ var levelFlag = map[string]LevelType{
 	"debug": DEBUG,
 	"info":  INFO,
 	"warn":  WARN,
-	"fatal": FATA,
-}
-
-func init() {
-	flag.StringVar(&logLevel, "logLevel", "info", "logs at or above this level to the logging output: debug, info, warn, fatal")
+	"fata":  FATA,
 }
 
 type logger struct {
@@ -87,7 +84,17 @@ func GlobalLevel() LevelType {
 	return globalLevel
 }
 
-func ParseFlag() bool {
+func SetFlagSet(flagSet *flag.FlagSet) {
+	if flagSet != nil {
+		defaultFlagSet = flagSet
+	}
+}
+
+func ParseFlag() {
+	defaultFlagSet.StringVar(&logLevel, "logLevel", "info", "logs at or above this level to the logging output: debug, info, warn, fata")
+}
+
+func ParseLevel() bool {
 	lvl, ok := levelFlag[logLevel]
 	if ok {
 		SetGlobalLevel(lvl)
