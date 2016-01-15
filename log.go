@@ -86,7 +86,7 @@ func GlobalLevel() LevelType {
 
 // AttachFlagSet set some flag, if flagSet is nil, will use flag.CommandLine
 func AttachFlagSet(flagSet *flag.FlagSet) {
-	if flagSet != nil {
+	if flagSet == nil {
 		flagSet = flag.CommandLine
 	}
 	flagSet.StringVar(&logLevel, "logLevel", "info", "logs at or above this level to the logging output: debug, info, warn, fata")
