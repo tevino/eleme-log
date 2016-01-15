@@ -22,9 +22,8 @@ const (
 )
 
 var (
-	globalLevel    = NOTSET
-	logLevel       string
-	defaultFlagSet = flag.CommandLine
+	globalLevel = NOTSET
+	logLevel    string
 )
 
 var LevelName = map[LevelType]string{
@@ -88,9 +87,9 @@ func GlobalLevel() LevelType {
 // AttachFlagSet set some flag, if flagSet is nil, will use flag.CommandLine
 func AttachFlagSet(flagSet *flag.FlagSet) {
 	if flagSet != nil {
-		defaultFlagSet = flagSet
+		flagSet = flag.CommandLine
 	}
-	defaultFlagSet.StringVar(&logLevel, "logLevel", "info", "logs at or above this level to the logging output: debug, info, warn, fata")
+	flagSet.StringVar(&logLevel, "logLevel", "info", "logs at or above this level to the logging output: debug, info, warn, fata")
 }
 
 func ParseFlag() error {
