@@ -23,7 +23,7 @@ const (
 var (
 	globalLevel    = NOTSET
 	logLevel       string
-	defaultFlagSet *flag.FlagSet = flag.CommandLine
+	defaultFlagSet = flag.CommandLine
 )
 
 var LevelName = map[LevelType]string{
