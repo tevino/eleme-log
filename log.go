@@ -1,6 +1,7 @@
 package log
 
 import (
+	"errors"
 	"flag"
 	"fmt"
 	"io"
@@ -92,13 +93,13 @@ func AttachFlagSet(flagSet *flag.FlagSet) {
 	defaultFlagSet.StringVar(&logLevel, "logLevel", "info", "logs at or above this level to the logging output: debug, info, warn, fata")
 }
 
-func ParseFlag() bool {
+func ParseFlag() error {
 	lvl, ok := levelFlag[logLevel]
 	if ok {
-		SetGlobalLevel(lvl)
-		return true
+		globalLevel = lvl
+		return nil
 	}
-	return false
+	return errors.New("unknown log level")
 }
 
 func (l *logger) AddHandler(h Handler) {
