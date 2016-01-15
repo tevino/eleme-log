@@ -84,17 +84,15 @@ func GlobalLevel() LevelType {
 	return globalLevel
 }
 
-func SetFlagSet(flagSet *flag.FlagSet) {
+// AttachFlagSet set some flag, if flagSet is nil, will use flag.CommandLine
+func AttachFlagSet(flagSet *flag.FlagSet) {
 	if flagSet != nil {
 		defaultFlagSet = flagSet
 	}
-}
-
-func ParseFlag() {
 	defaultFlagSet.StringVar(&logLevel, "logLevel", "info", "logs at or above this level to the logging output: debug, info, warn, fata")
 }
 
-func ParseLevel() bool {
+func ParseFlag() bool {
 	lvl, ok := levelFlag[logLevel]
 	if ok {
 		SetGlobalLevel(lvl)
