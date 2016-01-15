@@ -1,6 +1,7 @@
 package log
 
 import (
+	"flag"
 	"fmt"
 	"io"
 	"os"
@@ -19,7 +20,10 @@ const (
 	FATA
 )
 
-var globalLevel = NOTSET
+var (
+	globalLevel = NOTSET
+	logLevel    string
+)
 
 var LevelName = map[LevelType]string{
 	DEBUG: "DEBUG",
@@ -33,6 +37,17 @@ var LevelColor = map[LevelType]Color{
 	INFO:  Green,
 	WARN:  Yellow,
 	FATA:  Red,
+}
+
+var levelFlag = map[string]LevelType{
+	"debug": DEBUG,
+	"info":  INFO,
+	"warn":  WARN,
+	"fatal": FATA,
+}
+
+func init() {
+	flag.StringVar(&logLevel, "logLevel", "info", "logs at or above this level to the logging output: debug, info, warn, fatal")
 }
 
 type logger struct {
@@ -70,6 +85,15 @@ func SetGlobalLevel(lv LevelType) {
 
 func GlobalLevel() LevelType {
 	return globalLevel
+}
+
+func ParseFlag() bool {
+	lvl, ok := levelFlag[logLevel]
+	if ok {
+		SetGlobalLevel(lvl)
+		return true
+	}
+	return false
 }
 
 func (l *logger) AddHandler(h Handler) {
