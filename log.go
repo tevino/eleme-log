@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"strings"
 	"sync"
 	"text/template"
 	"time"
@@ -89,11 +90,11 @@ func AttachFlagSet(flagSet *flag.FlagSet) {
 	if flagSet == nil {
 		flagSet = flag.CommandLine
 	}
-	flagSet.StringVar(&logLevel, "logLevel", "info", "logs at or above this level to the logging output: debug, info, warn, fata")
+	flagSet.StringVar(&logLevel, "log", "info", "logs at or above this level to the logging output: debug, info, warn, fata")
 }
 
 func ParseFlag() error {
-	lvl, ok := levelFlag[logLevel]
+	lvl, ok := levelFlag[strings.ToLower(logLevel)]
 	if ok {
 		globalLevel = lvl
 		return nil
