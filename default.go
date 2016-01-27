@@ -1,7 +1,7 @@
 package log
 
 const (
-	defaultTpl = "{{level}} {{date}} {{time}} {{name}} {{}}"
+	defaultTpl = "{{level}} {{date}} {{time}} {{name}} {{file_line}} {{}}"
 	syslogTpl  = "{{datetime}} {{level}} {{name}}[{{pid}}]: [{{app_id}} {{rpc_id}} {{request_id}}] ## {{}}"
 )
 
