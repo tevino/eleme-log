@@ -6,6 +6,8 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"runtime"
+	"strconv"
 	"strings"
 	"sync"
 	"text/template"
@@ -127,16 +129,25 @@ func (l *logger) SetLevel(lv LevelType) {
 	l.lv = lv
 }
 
-func (l *logger) Output(lv LevelType, s string) {
+func (l *logger) Output(calldepth int, lv LevelType, s string) {
 	if lv < l.Level() {
 		return
 	}
+	fileLine := ""
+	_, file, line, ok := runtime.Caller(calldepth)
+	if !ok {
+		file = "???"
+		line = 0
+	}
+	fileLine = file + ":" + strconv.Itoa(line)
+
 	r := &Record{
-		name:  l.name,
-		now:   time.Now(),
-		lv:    lv,
-		msg:   s,
-		appID: l.appID,
+		fileLine: fileLine,
+		name:     l.name,
+		now:      time.Now(),
+		lv:       lv,
+		msg:      s,
+		appID:    l.appID,
 	}
 	var wg sync.WaitGroup
 	l.Lock()
@@ -153,52 +164,52 @@ func (l *logger) Output(lv LevelType, s string) {
 
 // Debug APIs
 func (l *logger) Debug(a ...interface{}) {
-	l.Output(DEBUG, fmt.Sprint(a...))
+	l.Output(2, DEBUG, fmt.Sprint(a...))
 }
 
 func (l *logger) Debugf(format string, a ...interface{}) {
-	l.Output(DEBUG, fmt.Sprintf(format, a...))
+	l.Output(2, DEBUG, fmt.Sprintf(format, a...))
 }
 
 // Print APIs output logs with default level
 func (l *logger) Print(a ...interface{}) {
-	l.Output(l.Level(), fmt.Sprint(a...))
+	l.Output(2, l.Level(), fmt.Sprint(a...))
 }
 
 func (l *logger) Println(a ...interface{}) {
-	l.Print(a...)
+	l.Output(2, l.Level(), fmt.Sprint(a...))
 }
 
 func (l *logger) Printf(f string, a ...interface{}) {
-	l.Output(l.Level(), fmt.Sprintf(f, a...))
+	l.Output(2, l.Level(), fmt.Sprintf(f, a...))
 }
 
 // Info APIs
 func (l *logger) Info(a ...interface{}) {
-	l.Output(INFO, fmt.Sprint(a...))
+	l.Output(2, INFO, fmt.Sprint(a...))
 }
 
 func (l *logger) Infof(f string, a ...interface{}) {
-	l.Output(INFO, fmt.Sprintf(f, a...))
+	l.Output(2, INFO, fmt.Sprintf(f, a...))
 }
 
 // Warn APIs
 func (l *logger) Warn(a ...interface{}) {
-	l.Output(WARN, fmt.Sprint(a...))
+	l.Output(2, WARN, fmt.Sprint(a...))
 }
 
 func (l *logger) Warnf(f string, a ...interface{}) {
-	l.Output(WARN, fmt.Sprintf(f, a...))
+	l.Output(2, WARN, fmt.Sprintf(f, a...))
 }
 
 // Fatal APIs
 func (l *logger) Fatal(a ...interface{}) {
-	l.Output(FATA, fmt.Sprint(a...))
+	l.Output(2, FATA, fmt.Sprint(a...))
 	os.Exit(1)
 }
 
 func (l *logger) Fatalf(f string, a ...interface{}) {
-	l.Output(FATA, fmt.Sprintf(f, a...))
+	l.Output(2, FATA, fmt.Sprintf(f, a...))
 	os.Exit(1)
 }
 

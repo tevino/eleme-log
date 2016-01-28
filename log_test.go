@@ -10,6 +10,27 @@ import (
 	"time"
 )
 
+func TestFileLine(t *testing.T) {
+	buf := bytes.NewBuffer(make([]byte, 100))
+	l := new(logger)
+	l.name = "name"
+	l.lv = INFO
+	l.handlers = make(map[Handler]bool)
+
+	hdr, err := NewStreamHandler(buf, "{{level}} {{date}} {{time}} {{name}} {{file_line}} {{}}")
+	if err != nil {
+		t.Fatalf("NewStreamHandler Error:%v", err)
+	}
+	l.AddHandler(hdr)
+	l.SetAppID("samaritan.test")
+	l.Info("TEST_TEST")
+
+	strs := strings.Split(buf.String(), " ")
+	if strs[4] != "log_test.go:26" {
+		t.Errorf("FileLine Error: %s", buf.String())
+	}
+}
+
 func newLogger(t *testing.T, w io.Writer, f string) Logger {
 	l := NewWithWriter("test", nil)
 	h, err := NewStreamHandler(w, f)

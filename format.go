@@ -135,6 +135,20 @@ func (f *Formatter) appID(r *Record) string {
 	return s
 }
 
+func (f *Formatter) fileLine(r *Record) string {
+	s := r.fileLine
+	for i := len(s) - 1; i >= 0; i-- {
+		if s[i] == '/' {
+			s = s[i+1:]
+			break
+		}
+	}
+	if f.colored {
+		s = f.paint(r.lv, s)
+	}
+	return s
+}
+
 func (f *Formatter) funcMap() template.FuncMap {
 	return template.FuncMap{
 		"date":       f.date,
@@ -147,6 +161,7 @@ func (f *Formatter) funcMap() template.FuncMap {
 		"request_id": f.requestID,
 		"app_id":     f.appID,
 		"datetime":   f.datetime,
+		"file_line":  f.fileLine,
 	}
 }
 
@@ -164,6 +179,7 @@ var tagReplacer = strings.NewReplacer(
 	"{{request_id}}", "{{request_id .}}",
 	"{{app_id}}", "{{app_id .}}",
 	"{{datetime}}", "{{datetime .}}",
+	"{{file_line}}", "{{file_line .}}",
 )
 
 func (f *Formatter) paint(lv LevelType, s string) string {
