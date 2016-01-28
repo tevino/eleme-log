@@ -14,7 +14,6 @@ type Logger interface {
 	WarnLogger
 	FatalLogger
 	SetAppID(appID string)
-	UseFileLine(use bool)
 }
 
 type LevelLogger interface {

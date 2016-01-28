@@ -52,7 +52,6 @@ var levelFlag = map[string]LevelType{
 
 type logger struct {
 	sync.Mutex
-	fileLine bool
 	wg       sync.WaitGroup
 	name     string
 	lv       LevelType
@@ -119,10 +118,6 @@ func (l *logger) RemoveHandler(h Handler) {
 	delete(l.handlers, h)
 }
 
-func (l *logger) UseFileLine(use bool) {
-	l.fileLine = use
-}
-
 func (l *logger) Level() LevelType {
 	if globalLevel == NOTSET {
 		return l.lv
@@ -139,14 +134,12 @@ func (l *logger) Output(calldepth int, lv LevelType, s string) {
 		return
 	}
 	fileLine := ""
-	if l.fileLine {
-		_, file, line, ok := runtime.Caller(calldepth)
-		if !ok {
-			file = "???"
-			line = 0
-		}
-		fileLine = file + ":" + strconv.Itoa(line)
+	_, file, line, ok := runtime.Caller(calldepth)
+	if !ok {
+		file = "???"
+		line = 0
 	}
+	fileLine = file + ":" + strconv.Itoa(line)
 
 	r := &Record{
 		fileLine: fileLine,
