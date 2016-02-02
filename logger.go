@@ -14,7 +14,8 @@ type Logger interface {
 	InfoLogger
 	WarnLogger
 	FatalLogger
-	SetAppID(appID string)
+	SetRpcID(rpcID string)
+	SetRequestID(requestID string)
 }
 
 type LevelLogger interface {

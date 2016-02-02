@@ -27,6 +27,7 @@ const (
 var (
 	globalLevel = NOTSET
 	logLevel    string
+	globalAppID = ""
 )
 
 var LevelName = map[LevelType]string{
@@ -52,12 +53,13 @@ var levelFlag = map[string]LevelType{
 
 type logger struct {
 	sync.RWMutex
-	wg       sync.WaitGroup
-	name     string
-	lv       LevelType
-	tpl      *template.Template
-	handlers map[Handler]bool
-	appID    string
+	wg        sync.WaitGroup
+	name      string
+	lv        LevelType
+	tpl       *template.Template
+	handlers  map[Handler]bool
+	rpcID     string
+	requestID string
 }
 
 func New(name string) Logger {
@@ -85,6 +87,10 @@ func SetGlobalLevel(lv LevelType) {
 
 func GlobalLevel() LevelType {
 	return globalLevel
+}
+
+func SetGlobalAppID(appID string) {
+	globalAppID = appID
 }
 
 // AttachFlagSet set some flag, if flagSet is nil, will use flag.CommandLine
@@ -139,6 +145,14 @@ func (l *logger) SetLevel(lv LevelType) {
 	l.lv = lv
 }
 
+func (l *logger) SetRpcID(rpcID string) {
+	l.rpcID = rpcID
+}
+
+func (l *logger) SetRequestID(requestID string) {
+	l.requestID = requestID
+}
+
 func (l *logger) Output(calldepth int, lv LevelType, s string) {
 	if lv < l.Level() {
 		return
@@ -152,12 +166,14 @@ func (l *logger) Output(calldepth int, lv LevelType, s string) {
 	fileLine = file + ":" + strconv.Itoa(line)
 
 	r := &Record{
-		fileLine: fileLine,
-		name:     l.name,
-		now:      time.Now(),
-		lv:       lv,
-		msg:      s,
-		appID:    l.appID,
+		fileLine:  fileLine,
+		name:      l.name,
+		now:       time.Now(),
+		lv:        lv,
+		msg:       s,
+		rpcID:     l.rpcID,
+		requestID: l.requestID,
+		appID:     globalAppID,
 	}
 	var wg sync.WaitGroup
 	l.Lock()
@@ -221,8 +237,4 @@ func (l *logger) Fatal(a ...interface{}) {
 func (l *logger) Fatalf(f string, a ...interface{}) {
 	l.Output(2, FATA, fmt.Sprintf(f, a...))
 	os.Exit(1)
-}
-
-func (l *logger) SetAppID(appID string) {
-	l.appID = appID
 }
