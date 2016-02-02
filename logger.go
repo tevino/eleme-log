@@ -14,7 +14,7 @@ type Logger interface {
 	InfoLogger
 	WarnLogger
 	FatalLogger
-	SetRpcID(rpcID string)
+	SetRPCID(rpcID string)
 	SetRequestID(requestID string)
 }
 

@@ -145,7 +145,7 @@ func (l *logger) SetLevel(lv LevelType) {
 	l.lv = lv
 }
 
-func (l *logger) SetRpcID(rpcID string) {
+func (l *logger) SetRPCID(rpcID string) {
 	l.rpcID = rpcID
 }
 

@@ -22,7 +22,7 @@ func TestFileLine(t *testing.T) {
 		t.Fatalf("NewStreamHandler Error:%v", err)
 	}
 	l.AddHandler(hdr)
-	l.SetAppID("samaritan.test")
+	globalAppID = "samaritan.test"
 	l.Info("TEST_TEST")
 
 	strs := strings.Split(buf.String(), " ")
@@ -102,7 +102,7 @@ func TestSyslogtpl(t *testing.T) {
 		t.Fatalf("NewStreamHandler Error:%v", err)
 	}
 	l.AddHandler(hdr)
-	l.SetAppID("samaritan.test")
+	globalAppID = "samaritan.test"
 	l.Info("TEST_TEST")
 
 	strs := strings.Split(buf.String(), " ")
