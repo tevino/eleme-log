@@ -14,8 +14,7 @@ type Logger interface {
 	InfoLogger
 	WarnLogger
 	FatalLogger
-	SetRPCID(rpcID string)
-	SetRequestID(requestID string)
+	RPCLogger
 }
 
 type LevelLogger interface {
@@ -52,4 +51,10 @@ type FatalLogger interface {
 	// Fatal APIs
 	Fatal(a ...interface{})
 	Fatalf(f string, a ...interface{})
+}
+
+type RPCLogger interface {
+	// RPC APIs
+	SetRPCID(rpcID string)
+	SetRequestID(requestID string)
 }
