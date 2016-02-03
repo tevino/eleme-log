@@ -79,10 +79,10 @@ func TestGlobalAppID(t *testing.T) {
 	var buf bytes.Buffer
 	l := newLogger(t, &buf, "[{{app_id}}] ## {{}}")
 
-	expected_nil := "[-] ## InfoLog\n"
+	expectedNil := "[-] ## InfoLog\n"
 	l.Info("InfoLog")
-	if buf.String() != expected_nil {
-		t.Errorf("Expected:\n%s\nGot:\n%s", expected_nil, buf.String())
+	if buf.String() != expectedNil {
+		t.Errorf("Expected:\n%s\nGot:\n%s", expectedNil, buf.String())
 	}
 
 	buf.Reset()
@@ -101,10 +101,10 @@ func TestSetRPCID(t *testing.T) {
 	l := newLogger(t, &buf, "[{{rpc_id}}] ## {{}}")
 	rpcLog := l.(RPCLogger)
 
-	expected_nil := "[-] ## InfoLog\n"
+	expectedNil := "[-] ## InfoLog\n"
 	rpcLog.Info("InfoLog")
-	if buf.String() != expected_nil {
-		t.Errorf("Expected:\n%s\nGot:\n%s", expected_nil, buf.String())
+	if buf.String() != expectedNil {
+		t.Errorf("Expected:\n%s\nGot:\n%s", expectedNil, buf.String())
 	}
 
 	buf.Reset()
@@ -121,10 +121,10 @@ func TestSetRequestID(t *testing.T) {
 	l := newLogger(t, &buf, "[{{request_id}}] ## {{}}")
 	rpcLog := l.(RPCLogger)
 
-	expected_nil := "[-] ## InfoLog\n"
+	expectedNil := "[-] ## InfoLog\n"
 	rpcLog.Info("InfoLog")
-	if buf.String() != expected_nil {
-		t.Errorf("Expected:\n%s\nGot:\n%s", expected_nil, buf.String())
+	if buf.String() != expectedNil {
+		t.Errorf("Expected:\n%s\nGot:\n%s", expectedNil, buf.String())
 	}
 
 	buf.Reset()
