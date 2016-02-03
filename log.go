@@ -81,6 +81,10 @@ func NewWithWriter(name string, w io.Writer) Logger {
 	return l
 }
 
+func NewRPCLogger(name string) RPCLogger {
+	return New(name).(RPCLogger)
+}
+
 func SetGlobalLevel(lv LevelType) {
 	globalLevel = lv
 }

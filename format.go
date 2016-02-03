@@ -109,7 +109,10 @@ func (f *Formatter) pid(r *Record) string {
 }
 
 func (f *Formatter) rpcID(r *Record) string {
-	s := "-"
+	s := r.rpcID
+	if s == "" {
+		s = "-"
+	}
 	if f.colored {
 		s = f.paint(r.lv, s)
 	}
@@ -117,7 +120,10 @@ func (f *Formatter) rpcID(r *Record) string {
 }
 
 func (f *Formatter) requestID(r *Record) string {
-	s := "-"
+	s := r.requestID
+	if s == "" {
+		s = "-"
+	}
 	if f.colored {
 		s = f.paint(r.lv, s)
 	}
