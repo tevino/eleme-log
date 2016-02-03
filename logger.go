@@ -1,25 +1,20 @@
 package log
 
-type MultiHandlerLogger interface {
-	AddHandler(h Handler)
-	RemoveHandler(h Handler)
-	Handlers() []Handler
-}
-
 type Logger interface {
-	MultiHandlerLogger
-	LevelLogger
+	MultiHandler
+	Leveler
 	DebugLogger
 	PrintLogger
 	InfoLogger
 	WarnLogger
 	FatalLogger
-	RPCLogger
 }
 
-type LevelLogger interface {
-	Level() LevelType
-	SetLevel(lv LevelType)
+type RPCLogger interface {
+	Logger
+	// RPC APIs
+	SetRPCID(rpcID string)
+	SetRequestID(requestID string)
 }
 
 type DebugLogger interface {
@@ -53,8 +48,12 @@ type FatalLogger interface {
 	Fatalf(f string, a ...interface{})
 }
 
-type RPCLogger interface {
-	// RPC APIs
-	SetRPCID(rpcID string)
-	SetRequestID(requestID string)
+type MultiHandler interface {
+	AddHandler(h Handler)
+	RemoveHandler(h Handler)
+}
+
+type Leveler interface {
+	Level() LevelType
+	SetLevel(lv LevelType)
 }
