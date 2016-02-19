@@ -51,7 +51,7 @@ var levelFlag = map[string]LevelType{
 }
 
 type logger struct {
-	sync.Mutex
+	sync.RWMutex
 	wg       sync.WaitGroup
 	name     string
 	lv       LevelType
@@ -112,6 +112,16 @@ func (l *logger) AddHandler(h Handler) {
 	}
 }
 
+func (l *logger) Handlers() []Handler {
+	l.RLock()
+	defer l.RUnlock()
+	var hs = make([]Handler, 0, len(l.handlers))
+	for h := range l.handlers {
+		hs = append(hs, h)
+	}
+	return hs
+}
+
 func (l *logger) RemoveHandler(h Handler) {
 	l.Lock()
 	defer l.Unlock()
@@ -151,6 +161,7 @@ func (l *logger) Output(calldepth int, lv LevelType, s string) {
 	}
 	var wg sync.WaitGroup
 	l.Lock()
+	defer l.Unlock()
 	for h := range l.handlers {
 		wg.Add(1)
 		go func(h Handler, r *Record) {
@@ -158,7 +169,6 @@ func (l *logger) Output(calldepth int, lv LevelType, s string) {
 			h.Log(r)
 		}(h, r)
 	}
-	l.Unlock()
 	wg.Wait()
 }
 

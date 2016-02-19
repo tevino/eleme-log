@@ -3,6 +3,7 @@ package log
 type MultiHandlerLogger interface {
 	AddHandler(h Handler)
 	RemoveHandler(h Handler)
+	Handlers() []Handler
 }
 
 type Logger interface {
