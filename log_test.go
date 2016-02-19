@@ -22,11 +22,12 @@ func TestFileLine(t *testing.T) {
 		t.Fatalf("NewStreamHandler Error:%v", err)
 	}
 	l.AddHandler(hdr)
-	l.SetAppID("samaritan.test")
+	SetGlobalAppID("samaritan.test")
+	defer SetGlobalAppID("")
 	l.Info("TEST_TEST")
 
 	strs := strings.Split(buf.String(), " ")
-	if strs[4] != "log_test.go:26" {
+	if strs[4] != "log_test.go:27" {
 		t.Errorf("FileLine Error: %s", buf.String())
 	}
 }
@@ -74,6 +75,67 @@ func TestLevel(t *testing.T) {
 	}
 }
 
+func TestGlobalAppID(t *testing.T) {
+	var buf bytes.Buffer
+	l := newLogger(t, &buf, "[{{app_id}}] ## {{}}")
+
+	expectedNil := "[-] ## InfoLog\n"
+	l.Info("InfoLog")
+	if buf.String() != expectedNil {
+		t.Errorf("Expected:\n%s\nGot:\n%s", expectedNil, buf.String())
+	}
+
+	buf.Reset()
+	expected := "[test.appid] ## InfoLog\n"
+	SetGlobalAppID("test.appid")
+	defer SetGlobalAppID("")
+
+	l.Info("InfoLog")
+	if buf.String() != expected {
+		t.Errorf("Expected:\n%s\nGot:\n%s", expected, buf.String())
+	}
+}
+
+func TestSetRPCID(t *testing.T) {
+	var buf bytes.Buffer
+	l := newLogger(t, &buf, "[{{rpc_id}}] ## {{}}")
+	rpcLog := l.(RPCLogger)
+
+	expectedNil := "[-] ## InfoLog\n"
+	rpcLog.Info("InfoLog")
+	if buf.String() != expectedNil {
+		t.Errorf("Expected:\n%s\nGot:\n%s", expectedNil, buf.String())
+	}
+
+	buf.Reset()
+	expected := "[test.rpcid] ## InfoLog\n"
+	rpcLog.SetRPCID("test.rpcid")
+	rpcLog.Info("InfoLog")
+	if buf.String() != expected {
+		t.Errorf("Expected:\n%s\nGot:\n%s", expected, buf.String())
+	}
+}
+
+func TestSetRequestID(t *testing.T) {
+	var buf bytes.Buffer
+	l := newLogger(t, &buf, "[{{request_id}}] ## {{}}")
+	rpcLog := l.(RPCLogger)
+
+	expectedNil := "[-] ## InfoLog\n"
+	rpcLog.Info("InfoLog")
+	if buf.String() != expectedNil {
+		t.Errorf("Expected:\n%s\nGot:\n%s", expectedNil, buf.String())
+	}
+
+	buf.Reset()
+	expected := "[test.request_id] ## InfoLog\n"
+	rpcLog.SetRequestID("test.request_id")
+	rpcLog.Info("InfoLog")
+	if buf.String() != expected {
+		t.Errorf("Expected:\n%s\nGot:\n%s", expected, buf.String())
+	}
+}
+
 func TestTemplate(t *testing.T) {
 	expected := `long: INFO
 short: I
@@ -102,7 +164,8 @@ func TestSyslogtpl(t *testing.T) {
 		t.Fatalf("NewStreamHandler Error:%v", err)
 	}
 	l.AddHandler(hdr)
-	l.SetAppID("samaritan.test")
+	SetGlobalAppID("samaritan.test")
+	defer SetGlobalAppID("")
 	l.Info("TEST_TEST")
 
 	strs := strings.Split(buf.String(), " ")
