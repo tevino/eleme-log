@@ -2,7 +2,7 @@ package log
 
 const (
 	defaultTpl = "{{level}} {{date}} {{time}} {{name}} {{}}"
-	syslogTpl  = "{{datetime}} {{level}} {{name}}[{{pid}}]: [{{app_id}} {{rpc_id}} {{request_id}}] ## {{}}"
+	syslogTpl  = "[{{app_id}} {{rpc_id}} {{request_id}}] ## {{}}"
 )
 
 var defaultLevel = INFO
