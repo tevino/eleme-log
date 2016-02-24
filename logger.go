@@ -51,6 +51,7 @@ type FatalLogger interface {
 type MultiHandler interface {
 	AddHandler(h Handler)
 	RemoveHandler(h Handler)
+	Handlers() []Handler
 }
 
 type Leveler interface {
