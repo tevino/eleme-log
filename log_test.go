@@ -152,7 +152,7 @@ content: hi
 }
 
 func TestSyslogtpl(t *testing.T) {
-	buf := bytes.NewBuffer(make([]byte, 100))
+	buf := bytes.NewBuffer(make([]byte, 0, 100))
 
 	l := new(logger)
 	l.name = "name"
@@ -170,8 +170,8 @@ func TestSyslogtpl(t *testing.T) {
 
 	strs := strings.Split(buf.String(), " ")
 
-	if strs[4] != "[samaritan.test" || strs[8] != "TEST_TEST\n" ||
-		strs[5] != "-" || strs[6] != "-]" {
+	if strs[0] != "[samaritan.test" || strs[4] != "TEST_TEST\n" ||
+		strs[1] != "-" || strs[2] != "-]" {
 		t.Errorf("SyslogTpl Error: %s", buf.String())
 	}
 }
