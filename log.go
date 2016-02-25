@@ -165,6 +165,12 @@ func (l *logger) SetRPCID(rpcID string) {
 	l.rpcID = rpcID
 }
 
+func (l *logger) RPCID() string {
+	l.RLock()
+	defer l.RUnlock()
+	return l.rpcID
+}
+
 func (l *logger) SetRequestID(requestID string) {
 	l.Lock()
 	defer l.Unlock()
