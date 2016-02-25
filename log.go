@@ -177,6 +177,12 @@ func (l *logger) SetRequestID(requestID string) {
 	l.requestID = requestID
 }
 
+func (l *logger) RequestID() string {
+	l.RLock()
+	defer l.RUnlock()
+	return l.requestID
+}
+
 func (l *logger) Output(calldepth int, lv LevelType, s string) {
 	if lv < l.Level() {
 		return

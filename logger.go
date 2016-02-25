@@ -17,6 +17,7 @@ type RPCLogger interface {
 	Logger
 	// RPC APIs
 	RPCID() string
+	RequestID() string
 	SetRPCID(rpcID string)
 	SetRequestID(requestID string)
 }
