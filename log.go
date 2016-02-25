@@ -114,6 +114,12 @@ func ParseFlag() error {
 	return errors.New("unknown log level")
 }
 
+func (l *logger) Name() string {
+	l.RLock()
+	defer l.RUnlock()
+	return l.name
+}
+
 func (l *logger) AddHandler(h Handler) {
 	l.Lock()
 	defer l.Unlock()
@@ -140,21 +146,41 @@ func (l *logger) RemoveHandler(h Handler) {
 
 func (l *logger) Level() LevelType {
 	if globalLevel == NOTSET {
+		l.RLock()
+		defer l.RUnlock()
 		return l.lv
 	}
 	return globalLevel
 }
 
 func (l *logger) SetLevel(lv LevelType) {
+	l.Lock()
+	defer l.Unlock()
 	l.lv = lv
 }
 
 func (l *logger) SetRPCID(rpcID string) {
+	l.Lock()
+	defer l.Unlock()
 	l.rpcID = rpcID
 }
 
+func (l *logger) RPCID() string {
+	l.RLock()
+	defer l.RUnlock()
+	return l.rpcID
+}
+
 func (l *logger) SetRequestID(requestID string) {
+	l.Lock()
+	defer l.Unlock()
 	l.requestID = requestID
+}
+
+func (l *logger) RequestID() string {
+	l.RLock()
+	defer l.RUnlock()
+	return l.requestID
 }
 
 func (l *logger) Output(calldepth int, lv LevelType, s string) {
@@ -169,6 +195,7 @@ func (l *logger) Output(calldepth int, lv LevelType, s string) {
 	}
 	fileLine = file + ":" + strconv.Itoa(line)
 
+	l.RLock()
 	r := &Record{
 		fileLine:  fileLine,
 		name:      l.name,
@@ -179,6 +206,8 @@ func (l *logger) Output(calldepth int, lv LevelType, s string) {
 		requestID: l.requestID,
 		appID:     globalAppID,
 	}
+	l.RUnlock()
+
 	var wg sync.WaitGroup
 	l.Lock()
 	defer l.Unlock()
