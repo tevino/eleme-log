@@ -1,5 +1,8 @@
 package log
 
+type Namer interface {
+	Name() string
+}
 type Logger interface {
 	MultiHandler
 	Leveler

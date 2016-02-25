@@ -114,6 +114,12 @@ func ParseFlag() error {
 	return errors.New("unknown log level")
 }
 
+func (l *logger) Name() string {
+	l.RLock()
+	defer l.RUnlock()
+	return l.name
+}
+
 func (l *logger) AddHandler(h Handler) {
 	l.Lock()
 	defer l.Unlock()
