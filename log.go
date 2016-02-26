@@ -69,7 +69,7 @@ func New(name string) Logger {
 func NewWithWriter(name string, w io.Writer) Logger {
 	l := new(logger)
 	l.name = name
-	l.lv = defaultLevel
+	l.lv = NOTSET
 	l.handlers = make(map[Handler]bool)
 	if w != nil {
 		hdr, err := NewStreamHandler(w, defaultTpl)
@@ -144,15 +144,30 @@ func (l *logger) RemoveHandler(h Handler) {
 	delete(l.handlers, h)
 }
 
+// Level returns the current level of logger
+//
+// logger.SetLevel is always authoritative, GlobalLevel is used if SetLevel is
+// not called, otherwise defaultLevel is used.
+//
+// Level() search priority:
+// 1. logger's own level (if set)
+// 2. GlobalLevel (if set)
+// 3. defaultLevel (built-in, usually INFO)
 func (l *logger) Level() LevelType {
-	if globalLevel == NOTSET {
-		l.RLock()
-		defer l.RUnlock()
+	l.RLock()
+	defer l.RUnlock()
+	if l.lv != NOTSET {
 		return l.lv
 	}
-	return globalLevel
+	if globalLevel != NOTSET {
+		return globalLevel
+	}
+	return defaultLevel
 }
 
+// SetLevel set the level of logger
+//
+// SetLevel is always authoritative, See also logger.Level()
 func (l *logger) SetLevel(lv LevelType) {
 	l.Lock()
 	defer l.Unlock()
