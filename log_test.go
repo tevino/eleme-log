@@ -8,6 +8,8 @@ import (
 	"strings"
 	"testing"
 	"time"
+
+	"github.com/stretchr/testify/assert"
 )
 
 func TestFileLine(t *testing.T) {
@@ -59,6 +61,19 @@ func TestGlobalLevel(t *testing.T) {
 	if b.String() != expected {
 		t.Errorf("Expected:\n%v\nGot:\n%v", expected, b.String())
 	}
+}
+
+func TestLevelPriority(t *testing.T) {
+	l := New("test")
+	ast := assert.New(t)
+
+	ast.Equal(l.Level(), defaultLevel)
+
+	SetGlobalLevel(FATA)
+	ast.Equal(l.Level(), FATA)
+
+	l.SetLevel(WARN)
+	ast.Equal(l.Level(), WARN)
 }
 
 func TestLevel(t *testing.T) {
