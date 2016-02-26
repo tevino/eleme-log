@@ -69,7 +69,7 @@ func New(name string) Logger {
 func NewWithWriter(name string, w io.Writer) Logger {
 	l := new(logger)
 	l.name = name
-	l.lv = defaultLevel
+	l.lv = NOTSET
 	l.handlers = make(map[Handler]bool)
 	if w != nil {
 		hdr, err := NewStreamHandler(w, defaultTpl)
@@ -145,12 +145,15 @@ func (l *logger) RemoveHandler(h Handler) {
 }
 
 func (l *logger) Level() LevelType {
-	if globalLevel == NOTSET {
-		l.RLock()
-		defer l.RUnlock()
+	l.RLock()
+	defer l.RUnlock()
+	if l.lv != NOTSET {
 		return l.lv
 	}
-	return globalLevel
+	if globalLevel != NOTSET {
+		return globalLevel
+	}
+	return defaultLevel
 }
 
 func (l *logger) SetLevel(lv LevelType) {
