@@ -29,7 +29,7 @@ func TestFileLine(t *testing.T) {
 	l.Info("TEST_TEST")
 
 	strs := strings.Split(buf.String(), " ")
-	if strs[4] != "log_test.go:27" {
+	if strs[4] != "log_test.go:29" {
 		t.Errorf("FileLine Error: %s", buf.String())
 	}
 }
