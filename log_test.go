@@ -52,7 +52,6 @@ func TestGlobalLevel(t *testing.T) {
 	l := newLogger(t, &b, "{{l}}: {{}}")
 	SetGlobalLevel(WARN)
 	defer SetGlobalLevel(NOTSET)
-	l.SetLevel(INFO)
 
 	l.Debug("DebugLog")
 	l.Info("InfoLog")
@@ -70,6 +69,7 @@ func TestLevelPriority(t *testing.T) {
 	ast.Equal(l.Level(), defaultLevel)
 
 	SetGlobalLevel(FATA)
+	defer SetGlobalLevel(NOTSET)
 	ast.Equal(l.Level(), FATA)
 
 	l.SetLevel(WARN)
@@ -200,6 +200,7 @@ func ExampleLogger() {
 	}
 	h.Colored(false)
 	l.AddHandler(h)
+
 	l.Debug("default level is INFO")
 	l.Info("thus debug is not printed")
 
