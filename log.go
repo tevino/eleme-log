@@ -14,6 +14,7 @@ import (
 	"time"
 )
 
+// LevelType identifies the level of a logger
 type LevelType int
 
 const (
@@ -30,6 +31,7 @@ var (
 	globalAppID = ""
 )
 
+// LevelName maps LevelType to human-readable string
 var LevelName = map[LevelType]string{
 	DEBUG: "DEBUG",
 	INFO:  "INFO",
@@ -62,10 +64,12 @@ type logger struct {
 	requestID string
 }
 
+// New creates a Logger with Stdout as default output
 func New(name string) Logger {
 	return NewWithWriter(name, os.Stdout)
 }
 
+// NewWithWriter creates a Logger with given Writer as the only output
 func NewWithWriter(name string, w io.Writer) Logger {
 	l := new(logger)
 	l.name = name
@@ -81,23 +85,29 @@ func NewWithWriter(name string, w io.Writer) Logger {
 	return l
 }
 
+// NewRPCLogger creates a Logger with given name as a RPCLogger
 func NewRPCLogger(name string) RPCLogger {
 	return New(name).(RPCLogger)
 }
 
+// SetGlobalLevel sets the global log level
 func SetGlobalLevel(lv LevelType) {
 	globalLevel = lv
 }
 
+// GlobalLevel returns the global log level
 func GlobalLevel() LevelType {
 	return globalLevel
 }
 
+// SetGlobalAppID sets the global AppID
 func SetGlobalAppID(appID string) {
 	globalAppID = appID
 }
 
-// AttachFlagSet set some flag, if flagSet is nil, will use flag.CommandLine
+// AttachFlagSet attaches a flag to the given FlagSet indicating the global log level
+//
+// Passing nil flagSet for default FlagSet(flag.CommandLine)
 func AttachFlagSet(flagSet *flag.FlagSet) {
 	if flagSet == nil {
 		flagSet = flag.CommandLine
@@ -105,6 +115,7 @@ func AttachFlagSet(flagSet *flag.FlagSet) {
 	flagSet.StringVar(&logLevel, "log", "info", "logs at or above this level to the logging output: debug, info, warn, fata")
 }
 
+// ParseFlag should be used after AttachFlagSet
 func ParseFlag() error {
 	lvl, ok := levelFlag[strings.ToLower(logLevel)]
 	if ok {
@@ -114,12 +125,14 @@ func ParseFlag() error {
 	return errors.New("unknown log level")
 }
 
+// Name returns the name of logger
 func (l *logger) Name() string {
 	l.RLock()
 	defer l.RUnlock()
 	return l.name
 }
 
+// AddHandler adds the given handler to logger
 func (l *logger) AddHandler(h Handler) {
 	l.Lock()
 	defer l.Unlock()
@@ -128,6 +141,7 @@ func (l *logger) AddHandler(h Handler) {
 	}
 }
 
+// Handlers returns all handlers
 func (l *logger) Handlers() []Handler {
 	l.RLock()
 	defer l.RUnlock()
@@ -138,6 +152,7 @@ func (l *logger) Handlers() []Handler {
 	return hs
 }
 
+// RemoveHandler removes a handler
 func (l *logger) RemoveHandler(h Handler) {
 	l.Lock()
 	defer l.Unlock()
@@ -174,30 +189,37 @@ func (l *logger) SetLevel(lv LevelType) {
 	l.lv = lv
 }
 
+// SetRPCID sets the RPCID for logger
 func (l *logger) SetRPCID(rpcID string) {
 	l.Lock()
 	defer l.Unlock()
 	l.rpcID = rpcID
 }
 
+// RPCID returns the RPCID of logger
 func (l *logger) RPCID() string {
 	l.RLock()
 	defer l.RUnlock()
 	return l.rpcID
 }
 
+// SetRequestID sets the RequestID for logger
 func (l *logger) SetRequestID(requestID string) {
 	l.Lock()
 	defer l.Unlock()
 	l.requestID = requestID
 }
 
+// RequestID returns the request ID of logger
 func (l *logger) RequestID() string {
 	l.RLock()
 	defer l.RUnlock()
 	return l.requestID
 }
 
+// Output writes a log to all writers with given calldepth and level
+//
+// Normally, you won't need this.
 func (l *logger) Output(calldepth int, lv LevelType, s string) {
 	if lv < l.Level() {
 		return
@@ -237,51 +259,67 @@ func (l *logger) Output(calldepth int, lv LevelType, s string) {
 }
 
 // Debug APIs
+
+// Debug calls Output to log with DEBUG level
 func (l *logger) Debug(a ...interface{}) {
 	l.Output(2, DEBUG, fmt.Sprint(a...))
 }
 
+// Debugf calls Output to log with DEBUG level and given format
 func (l *logger) Debugf(format string, a ...interface{}) {
 	l.Output(2, DEBUG, fmt.Sprintf(format, a...))
 }
 
-// Print APIs output logs with default level
+// Print APIs
+
+// Print calls Output to log with default level
 func (l *logger) Print(a ...interface{}) {
 	l.Output(2, l.Level(), fmt.Sprint(a...))
 }
 
+// Println calls Output to log with default level
 func (l *logger) Println(a ...interface{}) {
 	l.Output(2, l.Level(), fmt.Sprint(a...))
 }
 
+// Printf calls Output to log with default level and given format
 func (l *logger) Printf(f string, a ...interface{}) {
 	l.Output(2, l.Level(), fmt.Sprintf(f, a...))
 }
 
 // Info APIs
+
+// Info calls Output to log with INFO level
 func (l *logger) Info(a ...interface{}) {
 	l.Output(2, INFO, fmt.Sprint(a...))
 }
 
+// Infof calls Output to log with INFO level and given format
 func (l *logger) Infof(f string, a ...interface{}) {
 	l.Output(2, INFO, fmt.Sprintf(f, a...))
 }
 
 // Warn APIs
+
+// Warn calls Output to log with WARN level
 func (l *logger) Warn(a ...interface{}) {
 	l.Output(2, WARN, fmt.Sprint(a...))
 }
 
+// Warnf calls Output to log with WARN level and given format
 func (l *logger) Warnf(f string, a ...interface{}) {
 	l.Output(2, WARN, fmt.Sprintf(f, a...))
 }
 
 // Fatal APIs
+
+// Fatal calls Output to log with FATA level followed by a call to os.Exit(1)
 func (l *logger) Fatal(a ...interface{}) {
 	l.Output(2, FATA, fmt.Sprint(a...))
 	os.Exit(1)
 }
 
+// Fatalf calls Output to log with FATA level with given format, followed by a call to os.Exit(1)
 func (l *logger) Fatalf(f string, a ...interface{}) {
 	l.Output(2, FATA, fmt.Sprintf(f, a...))
 	os.Exit(1)
