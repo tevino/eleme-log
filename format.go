@@ -189,5 +189,5 @@ var tagReplacer = strings.NewReplacer(
 )
 
 func (f *Formatter) paint(lv LevelType, s string) string {
-	return painter(LevelColor[lv], s)
+	return painter(levelColor[lv], s)
 }
