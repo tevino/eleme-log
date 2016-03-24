@@ -39,7 +39,7 @@ var LevelName = map[LevelType]string{
 	FATA:  "FATA",
 }
 
-var levelColor = map[LevelType]Color{
+var levelColor = map[LevelType]color{
 	DEBUG: Blue,
 	INFO:  Green,
 	WARN:  Yellow,
