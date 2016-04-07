@@ -165,9 +165,9 @@ func (l *logger) RemoveHandler(h Handler) {
 // not called, otherwise defaultLevel is used.
 //
 // Level() search priority:
-// 1. logger's own level (if set)
-// 2. GlobalLevel (if set)
-// 3. defaultLevel (built-in, usually INFO)
+//	1. logger's own level (if set)
+//	2. GlobalLevel (if set)
+//	3. defaultLevel (built-in, usually INFO)
 func (l *logger) Level() LevelType {
 	l.RLock()
 	defer l.RUnlock()

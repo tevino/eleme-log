@@ -10,7 +10,8 @@ type SyslogHandler struct {
 
 // NewSyslogHandler creates a SyslogHandler with given syslog.Writer which
 // could be created by syslog.New, the log format as follows:
-// "[{{app_id}} {{rpc_id}} {{request_id}}] ## {{}}"
+//
+//	"[{{app_id}} {{rpc_id}} {{request_id}}] ## {{}}"
 func NewSyslogHandler(w *syslog.Writer) (*SyslogHandler, error) {
 	return NewSyslogHandlerWithFormat(w, syslogTpl)
 }
