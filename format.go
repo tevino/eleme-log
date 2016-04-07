@@ -9,11 +9,14 @@ import (
 	"text/template"
 )
 
+// Formatter describes the format of outputting log
 type Formatter struct {
 	colored bool
 	tpl     *template.Template
 }
 
+// NewFormatter creates a Formatter with given format string and whether to
+// color the output
 func NewFormatter(format string, colored bool) (*Formatter, error) {
 	fm := new(Formatter)
 	fm.colored = colored
@@ -23,6 +26,39 @@ func NewFormatter(format string, colored bool) (*Formatter, error) {
 	return fm, nil
 }
 
+var rTagLong = regexp.MustCompile("{{ *([a-zA-Z]+) *}}")
+var tagShort = []byte("{{$1}}")
+var tagReplacer = strings.NewReplacer(
+	"{{}}", "{{.String}}",
+	"{{level}}", "{{level .}}",
+	"{{l}}", "{{l .}}",
+	"{{date}}", "{{date .}}",
+	"{{time}}", "{{time .}}",
+	"{{datetime}}", "{{datetime .}}",
+	"{{name}}", "{{name .}}",
+	"{{pid}}", "{{pid .}}",
+	"{{file_line}}", "{{file_line .}}",
+
+	"{{rpc_id}}", "{{rpc_id .}}",
+	"{{request_id}}", "{{request_id .}}",
+	"{{app_id}}", "{{app_id .}}",
+)
+
+// SetFormat set the format of outputting log
+//
+// The default is "{{ level }} {{ date }} {{ time }} {{ name }} {{}}"
+// {{this is a placeholder}} which will be replaced by the actual content
+//
+// Available placeholders:
+// {{}} The message provided by you e.g. l.Info(message)
+// {{ level }} Log level in four UPPER-CASED letters e.g. INFO, WARN
+// {{ l }} Log level in one UPPER-CASED letter e.g. I, W
+// {{ data }} Date in format "2006-01-02"
+// {{ time }} Time in format "15:04:05")
+// {{ datetime }} Date and time in format "2006-01-02 15:04:05.999"
+// {{ name }} Logger name
+// {{ pid }} Current process ID
+// {{ file_line }} Filename and line number in format "file.go:12"
 func (f *Formatter) SetFormat(tpl string) error {
 	// {{ tag }} -> {{tag}}
 	tpl = string(rTagLong.ReplaceAll([]byte(tpl), tagShort))
@@ -44,6 +80,7 @@ func (f *Formatter) SetFormat(tpl string) error {
 	return nil
 }
 
+// Format formats a Record with set format
 func (f *Formatter) Format(r *Record) string {
 	var buf bytes.Buffer
 	f.tpl.Execute(&buf, r)
@@ -52,7 +89,7 @@ func (f *Formatter) Format(r *Record) string {
 
 // TODO: the 'if color then paint' is ugly!!
 
-func (f *Formatter) LevelType(r *Record) string {
+func (f *Formatter) _level(r *Record) string {
 	s := LevelName[r.lv]
 	if f.colored {
 		s = f.paint(r.lv, s)
@@ -60,7 +97,7 @@ func (f *Formatter) LevelType(r *Record) string {
 	return s
 }
 
-func (f *Formatter) l(r *Record) string {
+func (f *Formatter) _l(r *Record) string {
 	s := LevelName[r.lv][0:1]
 	if f.colored {
 		s = f.paint(r.lv, s)
@@ -68,7 +105,7 @@ func (f *Formatter) l(r *Record) string {
 	return s
 }
 
-func (f *Formatter) datetime(r *Record) string {
+func (f *Formatter) _datetime(r *Record) string {
 	s := r.now.Format("2006-01-02 15:04:05.999")
 	if f.colored {
 		s = f.paint(r.lv, s)
@@ -76,7 +113,7 @@ func (f *Formatter) datetime(r *Record) string {
 	return s
 }
 
-func (f *Formatter) date(r *Record) string {
+func (f *Formatter) _date(r *Record) string {
 	s := r.now.Format("2006-01-02")
 	if f.colored {
 		s = f.paint(r.lv, s)
@@ -84,7 +121,7 @@ func (f *Formatter) date(r *Record) string {
 	return s
 }
 
-func (f *Formatter) time(r *Record) string {
+func (f *Formatter) _time(r *Record) string {
 	s := r.now.Format("15:04:05")
 	if f.colored {
 		s = f.paint(r.lv, s)
@@ -92,7 +129,7 @@ func (f *Formatter) time(r *Record) string {
 	return s
 }
 
-func (f *Formatter) name(r *Record) string {
+func (f *Formatter) _name(r *Record) string {
 	s := r.name
 	if f.colored {
 		s = f.paint(r.lv, s)
@@ -100,7 +137,7 @@ func (f *Formatter) name(r *Record) string {
 	return s
 }
 
-func (f *Formatter) pid(r *Record) string {
+func (f *Formatter) _pid(r *Record) string {
 	s := strconv.Itoa(os.Getpid())
 	if f.colored {
 		s = f.paint(r.lv, s)
@@ -108,7 +145,7 @@ func (f *Formatter) pid(r *Record) string {
 	return s
 }
 
-func (f *Formatter) rpcID(r *Record) string {
+func (f *Formatter) _rpcID(r *Record) string {
 	s := r.rpcID
 	if s == "" {
 		s = "-"
@@ -119,7 +156,7 @@ func (f *Formatter) rpcID(r *Record) string {
 	return s
 }
 
-func (f *Formatter) requestID(r *Record) string {
+func (f *Formatter) _requestID(r *Record) string {
 	s := r.requestID
 	if s == "" {
 		s = "-"
@@ -130,7 +167,7 @@ func (f *Formatter) requestID(r *Record) string {
 	return s
 }
 
-func (f *Formatter) appID(r *Record) string {
+func (f *Formatter) _appID(r *Record) string {
 	s := r.appID
 	if s == "" {
 		s = "-"
@@ -141,7 +178,7 @@ func (f *Formatter) appID(r *Record) string {
 	return s
 }
 
-func (f *Formatter) fileLine(r *Record) string {
+func (f *Formatter) _fileLine(r *Record) string {
 	s := r.fileLine
 	for i := len(s) - 1; i >= 0; i-- {
 		if s[i] == '/' {
@@ -157,37 +194,21 @@ func (f *Formatter) fileLine(r *Record) string {
 
 func (f *Formatter) funcMap() template.FuncMap {
 	return template.FuncMap{
-		"date":       f.date,
-		"time":       f.time,
-		"l":          f.l,
-		"level":      f.LevelType,
-		"name":       f.name,
-		"pid":        f.pid,
-		"rpc_id":     f.rpcID,
-		"request_id": f.requestID,
-		"app_id":     f.appID,
-		"datetime":   f.datetime,
-		"file_line":  f.fileLine,
+		"date":      f._date,
+		"time":      f._time,
+		"datetime":  f._datetime,
+		"l":         f._l,
+		"level":     f._level,
+		"name":      f._name,
+		"pid":       f._pid,
+		"file_line": f._fileLine,
+
+		"rpc_id":     f._rpcID,
+		"request_id": f._requestID,
+		"app_id":     f._appID,
 	}
 }
 
-var rTagLong = regexp.MustCompile("{{ *([a-zA-Z]+) *}}")
-var tagShort = []byte("{{$1}}")
-var tagReplacer = strings.NewReplacer(
-	"{{}}", "{{.String}}",
-	"{{level}}", "{{level .}}",
-	"{{l}}", "{{l .}}",
-	"{{date}}", "{{date .}}",
-	"{{time}}", "{{time .}}",
-	"{{name}}", "{{name .}}",
-	"{{pid}}", "{{pid .}}",
-	"{{rpc_id}}", "{{rpc_id .}}",
-	"{{request_id}}", "{{request_id .}}",
-	"{{app_id}}", "{{app_id .}}",
-	"{{datetime}}", "{{datetime .}}",
-	"{{file_line}}", "{{file_line .}}",
-)
-
 func (f *Formatter) paint(lv LevelType, s string) string {
-	return painter(LevelColor[lv], s)
+	return painter(levelColor[lv], s)
 }

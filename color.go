@@ -7,7 +7,7 @@ import (
 	"unsafe"
 )
 
-type Color string
+type color string
 
 const (
 	Blue   = "\x1b[0;34m"
@@ -18,7 +18,7 @@ const (
 	colorRST = "\x1b[0;m"
 )
 
-func painter(c Color, s string) string {
+func painter(c color, s string) string {
 	return string(c) + s + colorRST
 }
 
