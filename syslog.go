@@ -2,15 +2,21 @@ package log
 
 import "log/syslog"
 
+// SyslogHandler can send log to syslog
 type SyslogHandler struct {
 	*Formatter
 	w *syslog.Writer
 }
 
+// NewSyslogHandler creates a SyslogHandler with given syslog.Writer which
+// could be created by syslog.New, the log format as follows:
+// "[{{app_id}} {{rpc_id}} {{request_id}}] ## {{}}"
 func NewSyslogHandler(w *syslog.Writer) (*SyslogHandler, error) {
 	return NewSyslogHandlerWithFormat(w, syslogTpl)
 }
 
+// NewSyslogHandlerWithFormat is just like NewSyslogHandler but with customized
+// format string
 func NewSyslogHandlerWithFormat(w *syslog.Writer, f string) (*SyslogHandler, error) {
 	h := new(SyslogHandler)
 	h.w = w
@@ -19,6 +25,7 @@ func NewSyslogHandlerWithFormat(w *syslog.Writer, f string) (*SyslogHandler, err
 	return h, err
 }
 
+// Log prints the Record info syslog writer
 func (sh *SyslogHandler) Log(r *Record) {
 	b := sh.Formatter.Format(r)
 	switch r.lv {
