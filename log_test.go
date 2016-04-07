@@ -34,7 +34,7 @@ func TestFileLine(t *testing.T) {
 	}
 }
 
-func newLogger(t *testing.T, w io.Writer, f string) Logger {
+func newLogger(t *testing.T, w io.Writer, f string) SimpleLogger {
 	l := NewWithWriter("test", nil)
 	h, err := NewStreamHandler(w, f)
 	h.Colored(false)

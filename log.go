@@ -65,12 +65,12 @@ type logger struct {
 }
 
 // New creates a Logger with Stdout as default output
-func New(name string) Logger {
+func New(name string) SimpleLogger {
 	return NewWithWriter(name, os.Stdout)
 }
 
 // NewWithWriter creates a Logger with given Writer as the only output
-func NewWithWriter(name string, w io.Writer) Logger {
+func NewWithWriter(name string, w io.Writer) SimpleLogger {
 	l := new(logger)
 	l.name = name
 	l.lv = NOTSET

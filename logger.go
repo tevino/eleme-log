@@ -20,7 +20,7 @@ type MultiHandler interface {
 	Handlers() []Handler
 }
 
-type Logger interface {
+type SimpleLogger interface {
 	// Basic
 	NamedLeveler
 
@@ -36,7 +36,7 @@ type Logger interface {
 }
 
 type RPCLogger interface {
-	Logger
+	SimpleLogger
 	// RPC APIs
 	RPCID() string
 	RequestID() string
