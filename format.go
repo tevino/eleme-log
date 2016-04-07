@@ -46,19 +46,20 @@ var tagReplacer = strings.NewReplacer(
 
 // SetFormat set the format of outputting log
 //
-// The default is "{{ level }} {{ date }} {{ time }} {{ name }} {{}}"
+// The default format is "{{ level }} {{ date }} {{ time }} {{ name }} {{}}"
+//
 // {{this is a placeholder}} which will be replaced by the actual content
 //
 // Available placeholders:
-// {{}} The message provided by you e.g. l.Info(message)
-// {{ level }} Log level in four UPPER-CASED letters e.g. INFO, WARN
-// {{ l }} Log level in one UPPER-CASED letter e.g. I, W
-// {{ data }} Date in format "2006-01-02"
-// {{ time }} Time in format "15:04:05")
-// {{ datetime }} Date and time in format "2006-01-02 15:04:05.999"
-// {{ name }} Logger name
-// {{ pid }} Current process ID
-// {{ file_line }} Filename and line number in format "file.go:12"
+//	{{}}            The message provided by you e.g. l.Info(message)
+//	{{ level }}     Log level in four UPPER-CASED letters e.g. INFO, WARN
+//	{{ l }}         Log level in one UPPER-CASED letter e.g. I, W
+//	{{ data }}      Date in format "2006-01-02"
+//	{{ time }}      Time in format "15:04:05")
+//	{{ datetime }}  Date and time in format "2006-01-02 15:04:05.999"
+//	{{ name }}      Logger name
+//	{{ pid }}       Current process ID
+//	{{ file_line }} Filename and line number in format "file.go:12"
 func (f *Formatter) SetFormat(tpl string) error {
 	// {{ tag }} -> {{tag}}
 	tpl = string(rTagLong.ReplaceAll([]byte(tpl), tagShort))

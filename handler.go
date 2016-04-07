@@ -37,6 +37,7 @@ func NewStreamHandler(w io.Writer, f string) (*StreamHandler, error) {
 
 // Colored enable or disable the color function of internal format, usually
 // this is determined automatically
+//
 // When called with no argument, it returns the current state of color function
 func (sw *StreamHandler) Colored(ok ...bool) bool {
 	if len(ok) > 0 {

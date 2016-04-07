@@ -14,7 +14,7 @@ import (
 
 func TestFileLine(t *testing.T) {
 	buf := bytes.NewBuffer(make([]byte, 100))
-	l := new(logger)
+	l := new(Logger)
 	l.name = "name"
 	l.lv = INFO
 	l.handlers = make(map[Handler]bool)
@@ -34,7 +34,7 @@ func TestFileLine(t *testing.T) {
 	}
 }
 
-func newLogger(t *testing.T, w io.Writer, f string) Logger {
+func newLogger(t *testing.T, w io.Writer, f string) SimpleLogger {
 	l := NewWithWriter("test", nil)
 	h, err := NewStreamHandler(w, f)
 	h.Colored(false)
@@ -169,7 +169,7 @@ content: hi
 func TestSyslogtpl(t *testing.T) {
 	buf := bytes.NewBuffer(make([]byte, 0, 100))
 
-	l := new(logger)
+	l := new(Logger)
 	l.name = "name"
 	l.lv = INFO
 	l.handlers = make(map[Handler]bool)

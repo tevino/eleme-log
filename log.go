@@ -53,7 +53,7 @@ var levelFlag = map[string]LevelType{
 	"fata":  FATA,
 }
 
-type logger struct {
+type Logger struct {
 	sync.RWMutex
 	wg        sync.WaitGroup
 	name      string
@@ -65,13 +65,13 @@ type logger struct {
 }
 
 // New creates a Logger with Stdout as default output
-func New(name string) Logger {
+func New(name string) *Logger {
 	return NewWithWriter(name, os.Stdout)
 }
 
 // NewWithWriter creates a Logger with given Writer as the only output
-func NewWithWriter(name string, w io.Writer) Logger {
-	l := new(logger)
+func NewWithWriter(name string, w io.Writer) *Logger {
+	l := new(Logger)
 	l.name = name
 	l.lv = NOTSET
 	l.handlers = make(map[Handler]bool)
@@ -87,7 +87,8 @@ func NewWithWriter(name string, w io.Writer) Logger {
 
 // NewRPCLogger creates a Logger with given name as a RPCLogger
 func NewRPCLogger(name string) RPCLogger {
-	return New(name).(RPCLogger)
+	// TODO: differentiate RPCLogger and Logger
+	return New(name)
 }
 
 // SetGlobalLevel sets the global log level
@@ -126,14 +127,14 @@ func ParseFlag() error {
 }
 
 // Name returns the name of logger
-func (l *logger) Name() string {
+func (l *Logger) Name() string {
 	l.RLock()
 	defer l.RUnlock()
 	return l.name
 }
 
 // AddHandler adds the given handler to logger
-func (l *logger) AddHandler(h Handler) {
+func (l *Logger) AddHandler(h Handler) {
 	l.Lock()
 	defer l.Unlock()
 	if !l.handlers[h] {
@@ -142,7 +143,7 @@ func (l *logger) AddHandler(h Handler) {
 }
 
 // Handlers returns all handlers
-func (l *logger) Handlers() []Handler {
+func (l *Logger) Handlers() []Handler {
 	l.RLock()
 	defer l.RUnlock()
 	var hs = make([]Handler, 0, len(l.handlers))
@@ -153,7 +154,7 @@ func (l *logger) Handlers() []Handler {
 }
 
 // RemoveHandler removes a handler
-func (l *logger) RemoveHandler(h Handler) {
+func (l *Logger) RemoveHandler(h Handler) {
 	l.Lock()
 	defer l.Unlock()
 	delete(l.handlers, h)
@@ -165,10 +166,10 @@ func (l *logger) RemoveHandler(h Handler) {
 // not called, otherwise defaultLevel is used.
 //
 // Level() search priority:
-// 1. logger's own level (if set)
-// 2. GlobalLevel (if set)
-// 3. defaultLevel (built-in, usually INFO)
-func (l *logger) Level() LevelType {
+//	1. logger's own level (if set)
+//	2. GlobalLevel (if set)
+//	3. defaultLevel (built-in, usually INFO)
+func (l *Logger) Level() LevelType {
 	l.RLock()
 	defer l.RUnlock()
 	if l.lv != NOTSET {
@@ -183,35 +184,35 @@ func (l *logger) Level() LevelType {
 // SetLevel set the level of logger
 //
 // SetLevel is always authoritative, See also logger.Level()
-func (l *logger) SetLevel(lv LevelType) {
+func (l *Logger) SetLevel(lv LevelType) {
 	l.Lock()
 	defer l.Unlock()
 	l.lv = lv
 }
 
 // SetRPCID sets the RPCID for logger
-func (l *logger) SetRPCID(rpcID string) {
+func (l *Logger) SetRPCID(rpcID string) {
 	l.Lock()
 	defer l.Unlock()
 	l.rpcID = rpcID
 }
 
 // RPCID returns the RPCID of logger
-func (l *logger) RPCID() string {
+func (l *Logger) RPCID() string {
 	l.RLock()
 	defer l.RUnlock()
 	return l.rpcID
 }
 
 // SetRequestID sets the RequestID for logger
-func (l *logger) SetRequestID(requestID string) {
+func (l *Logger) SetRequestID(requestID string) {
 	l.Lock()
 	defer l.Unlock()
 	l.requestID = requestID
 }
 
 // RequestID returns the request ID of logger
-func (l *logger) RequestID() string {
+func (l *Logger) RequestID() string {
 	l.RLock()
 	defer l.RUnlock()
 	return l.requestID
@@ -220,7 +221,7 @@ func (l *logger) RequestID() string {
 // Output writes a log to all writers with given calldepth and level
 //
 // Normally, you won't need this.
-func (l *logger) Output(calldepth int, lv LevelType, s string) {
+func (l *Logger) Output(calldepth int, lv LevelType, s string) {
 	if lv < l.Level() {
 		return
 	}
@@ -261,66 +262,66 @@ func (l *logger) Output(calldepth int, lv LevelType, s string) {
 // Debug APIs
 
 // Debug calls Output to log with DEBUG level
-func (l *logger) Debug(a ...interface{}) {
+func (l *Logger) Debug(a ...interface{}) {
 	l.Output(2, DEBUG, fmt.Sprint(a...))
 }
 
 // Debugf calls Output to log with DEBUG level and given format
-func (l *logger) Debugf(format string, a ...interface{}) {
+func (l *Logger) Debugf(format string, a ...interface{}) {
 	l.Output(2, DEBUG, fmt.Sprintf(format, a...))
 }
 
 // Print APIs
 
 // Print calls Output to log with default level
-func (l *logger) Print(a ...interface{}) {
+func (l *Logger) Print(a ...interface{}) {
 	l.Output(2, l.Level(), fmt.Sprint(a...))
 }
 
 // Println calls Output to log with default level
-func (l *logger) Println(a ...interface{}) {
+func (l *Logger) Println(a ...interface{}) {
 	l.Output(2, l.Level(), fmt.Sprint(a...))
 }
 
 // Printf calls Output to log with default level and given format
-func (l *logger) Printf(f string, a ...interface{}) {
+func (l *Logger) Printf(f string, a ...interface{}) {
 	l.Output(2, l.Level(), fmt.Sprintf(f, a...))
 }
 
 // Info APIs
 
 // Info calls Output to log with INFO level
-func (l *logger) Info(a ...interface{}) {
+func (l *Logger) Info(a ...interface{}) {
 	l.Output(2, INFO, fmt.Sprint(a...))
 }
 
 // Infof calls Output to log with INFO level and given format
-func (l *logger) Infof(f string, a ...interface{}) {
+func (l *Logger) Infof(f string, a ...interface{}) {
 	l.Output(2, INFO, fmt.Sprintf(f, a...))
 }
 
 // Warn APIs
 
 // Warn calls Output to log with WARN level
-func (l *logger) Warn(a ...interface{}) {
+func (l *Logger) Warn(a ...interface{}) {
 	l.Output(2, WARN, fmt.Sprint(a...))
 }
 
 // Warnf calls Output to log with WARN level and given format
-func (l *logger) Warnf(f string, a ...interface{}) {
+func (l *Logger) Warnf(f string, a ...interface{}) {
 	l.Output(2, WARN, fmt.Sprintf(f, a...))
 }
 
 // Fatal APIs
 
 // Fatal calls Output to log with FATA level followed by a call to os.Exit(1)
-func (l *logger) Fatal(a ...interface{}) {
+func (l *Logger) Fatal(a ...interface{}) {
 	l.Output(2, FATA, fmt.Sprint(a...))
 	os.Exit(1)
 }
 
 // Fatalf calls Output to log with FATA level with given format, followed by a call to os.Exit(1)
-func (l *logger) Fatalf(f string, a ...interface{}) {
+func (l *Logger) Fatalf(f string, a ...interface{}) {
 	l.Output(2, FATA, fmt.Sprintf(f, a...))
 	os.Exit(1)
 }
