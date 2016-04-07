@@ -17,7 +17,6 @@ func TestNamedLeveler(t *testing.T) {
 	ast.Equal(l.Level(), WARN)
 }
 
-// func TestLogger(t *testing.T) {
 func TestMultiHandler(t *testing.T) {
 	ast := assert.New(t)
 	l := New("tester")

@@ -246,28 +246,38 @@ func timeM(n time.Time) string {
 
 func BenchmarkDateM(b *testing.B) {
 	n := time.Now()
+	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
 		dateM(n)
 	}
 }
 
-// func BenchmarkDate(b *testing.B) {
-// 	dftLogger.cur.now = time.Now()
-// 	for i := 0; i < b.N; i++ {
-// 		dftLogger.date(false)
-// 	}
-// }
+func BenchmarkDate(b *testing.B) {
+	hdr := defaultLogger.Handlers()[0].(*StreamHandler)
+	r := &Record{
+		now: time.Now(),
+	}
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		hdr._date(r)
+	}
+}
 
 func BenchmarkTimeM(b *testing.B) {
 	n := time.Now()
+	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
 		timeM(n)
 	}
 }
 
-// func BenchmarkTime(b *testing.B) {
-// 	dftLogger.cur.now = time.Now()
-// 	for i := 0; i < b.N; i++ {
-// 		dftLogger.time(false)
-// 	}
-// }
+func BenchmarkTime(b *testing.B) {
+	hdr := defaultLogger.Handlers()[0].(*StreamHandler)
+	r := &Record{
+		now: time.Now(),
+	}
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		hdr._time(r)
+	}
+}
