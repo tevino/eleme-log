@@ -89,7 +89,7 @@ func (f *Formatter) Format(r *Record) string {
 
 // TODO: the 'if color then paint' is ugly!!
 
-func (f *Formatter) LevelType(r *Record) string {
+func (f *Formatter) _level(r *Record) string {
 	s := LevelName[r.lv]
 	if f.colored {
 		s = f.paint(r.lv, s)
@@ -97,7 +97,7 @@ func (f *Formatter) LevelType(r *Record) string {
 	return s
 }
 
-func (f *Formatter) l(r *Record) string {
+func (f *Formatter) _l(r *Record) string {
 	s := LevelName[r.lv][0:1]
 	if f.colored {
 		s = f.paint(r.lv, s)
@@ -105,7 +105,7 @@ func (f *Formatter) l(r *Record) string {
 	return s
 }
 
-func (f *Formatter) datetime(r *Record) string {
+func (f *Formatter) _datetime(r *Record) string {
 	s := r.now.Format("2006-01-02 15:04:05.999")
 	if f.colored {
 		s = f.paint(r.lv, s)
@@ -113,7 +113,7 @@ func (f *Formatter) datetime(r *Record) string {
 	return s
 }
 
-func (f *Formatter) date(r *Record) string {
+func (f *Formatter) _date(r *Record) string {
 	s := r.now.Format("2006-01-02")
 	if f.colored {
 		s = f.paint(r.lv, s)
@@ -121,7 +121,7 @@ func (f *Formatter) date(r *Record) string {
 	return s
 }
 
-func (f *Formatter) time(r *Record) string {
+func (f *Formatter) _time(r *Record) string {
 	s := r.now.Format("15:04:05")
 	if f.colored {
 		s = f.paint(r.lv, s)
@@ -129,7 +129,7 @@ func (f *Formatter) time(r *Record) string {
 	return s
 }
 
-func (f *Formatter) name(r *Record) string {
+func (f *Formatter) _name(r *Record) string {
 	s := r.name
 	if f.colored {
 		s = f.paint(r.lv, s)
@@ -137,7 +137,7 @@ func (f *Formatter) name(r *Record) string {
 	return s
 }
 
-func (f *Formatter) pid(r *Record) string {
+func (f *Formatter) _pid(r *Record) string {
 	s := strconv.Itoa(os.Getpid())
 	if f.colored {
 		s = f.paint(r.lv, s)
@@ -145,7 +145,7 @@ func (f *Formatter) pid(r *Record) string {
 	return s
 }
 
-func (f *Formatter) rpcID(r *Record) string {
+func (f *Formatter) _rpcID(r *Record) string {
 	s := r.rpcID
 	if s == "" {
 		s = "-"
@@ -156,7 +156,7 @@ func (f *Formatter) rpcID(r *Record) string {
 	return s
 }
 
-func (f *Formatter) requestID(r *Record) string {
+func (f *Formatter) _requestID(r *Record) string {
 	s := r.requestID
 	if s == "" {
 		s = "-"
@@ -167,7 +167,7 @@ func (f *Formatter) requestID(r *Record) string {
 	return s
 }
 
-func (f *Formatter) appID(r *Record) string {
+func (f *Formatter) _appID(r *Record) string {
 	s := r.appID
 	if s == "" {
 		s = "-"
@@ -178,7 +178,7 @@ func (f *Formatter) appID(r *Record) string {
 	return s
 }
 
-func (f *Formatter) fileLine(r *Record) string {
+func (f *Formatter) _fileLine(r *Record) string {
 	s := r.fileLine
 	for i := len(s) - 1; i >= 0; i-- {
 		if s[i] == '/' {
@@ -194,17 +194,18 @@ func (f *Formatter) fileLine(r *Record) string {
 
 func (f *Formatter) funcMap() template.FuncMap {
 	return template.FuncMap{
-		"date":       f.date,
-		"time":       f.time,
-		"l":          f.l,
-		"level":      f.LevelType,
-		"name":       f.name,
-		"pid":        f.pid,
-		"rpc_id":     f.rpcID,
-		"request_id": f.requestID,
-		"app_id":     f.appID,
-		"datetime":   f.datetime,
-		"file_line":  f.fileLine,
+		"date":      f._date,
+		"time":      f._time,
+		"datetime":  f._datetime,
+		"l":         f._l,
+		"level":     f._level,
+		"name":      f._name,
+		"pid":       f._pid,
+		"file_line": f._fileLine,
+
+		"rpc_id":     f._rpcID,
+		"request_id": f._requestID,
+		"app_id":     f._appID,
 	}
 }
 
