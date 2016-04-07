@@ -3,8 +3,8 @@ package log
 import "log/syslog"
 
 type SyslogHandler struct {
-	w         *syslog.Writer
-	formatter *Formatter
+	*Formatter
+	w *syslog.Writer
 }
 
 func NewSyslogHandler(w *syslog.Writer) (*SyslogHandler, error) {
@@ -15,12 +15,12 @@ func NewSyslogHandlerWithFormat(w *syslog.Writer, f string) (*SyslogHandler, err
 	h := new(SyslogHandler)
 	h.w = w
 	formatter, err := NewFormatter(f, false)
-	h.formatter = formatter
+	h.Formatter = formatter
 	return h, err
 }
 
 func (sh *SyslogHandler) Log(r *Record) {
-	b := sh.formatter.Format(r)
+	b := sh.Formatter.Format(r)
 	switch r.lv {
 	case DEBUG:
 		sh.w.Debug(b)
