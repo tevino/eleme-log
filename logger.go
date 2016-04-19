@@ -20,6 +20,10 @@ type MultiHandler interface {
 	Handlers() []Handler
 }
 
+// SimpleLogger represents a named logger which is capable of logging with
+// multiple handlers and different levels.
+//
+// Normally this is the logger you should use.
 type SimpleLogger interface {
 	// Basic
 	NamedLeveler
@@ -45,27 +49,27 @@ type RPCLogger interface {
 	SetRequestID(requestID string)
 }
 
+// Debugger represents a logger with Debug APIs
 type Debugger interface {
-	// Debug APIs
 	Debug(a ...interface{})
 	Debugf(format string, a ...interface{})
 }
 
+// Printer represents a logger with Print APIs
 type Printer interface {
-	// Print APIs
 	Print(a ...interface{})
 	Println(a ...interface{})
 	Printf(f string, a ...interface{})
 }
 
+// Infoer represents a logger with Info APIs
 type Infoer interface {
-	// Info APIs
 	Info(a ...interface{})
 	Infof(f string, a ...interface{})
 }
 
+// Warner represents a logger with Warn APIs
 type Warner interface {
-	// Warn APIs
 	Warn(a ...interface{})
 	Warnf(f string, a ...interface{})
 }
@@ -78,7 +82,6 @@ type Errorer interface {
 
 // Fataler represents a logger with Fatal APIs
 type Fataler interface {
-	// Fatal APIs
 	Fatal(a ...interface{})
 	Fatalf(f string, a ...interface{})
 }
