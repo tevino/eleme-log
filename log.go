@@ -42,11 +42,11 @@ var LevelName = map[LevelType]string{
 }
 
 var levelColor = map[LevelType]color{
-	DEBUG: Blue,
-	INFO:  Green,
-	WARN:  Yellow,
-	ERRO:  Red,
-	FATA:  Red,
+	DEBUG: colorBlue,
+	INFO:  colorGreen,
+	WARN:  colorYellow,
+	ERRO:  colorRed,
+	FATA:  colorRed,
 }
 
 var levelFlag = map[string]LevelType{
