@@ -18,11 +18,17 @@ import (
 type LevelType int
 
 const (
+	// NOTSET indicates the logger level not set
 	NOTSET LevelType = iota
+	// DEBUG indicates the logger level DEBUG
 	DEBUG
+	// INFO indicates the logger level INFO
 	INFO
+	// WARN indicates the logger level WARNING
 	WARN
+	// ERRO indicates the logger level ERROR
 	ERRO
+	// FATA indicates the logger level FATAL
 	FATA
 )
 
@@ -57,6 +63,8 @@ var levelFlag = map[string]LevelType{
 	"fata":  FATA,
 }
 
+// Logger is an object for logging with a set of configurations, including
+// name, level, logging format, and multiple handlers
 type Logger struct {
 	sync.RWMutex
 	wg        sync.WaitGroup
@@ -323,7 +331,7 @@ func (l *Logger) Error(a ...interface{}) {
 	l.Output(2, ERRO, fmt.Sprint(a...))
 }
 
-// Errof calls Output to log with ERRO level and given format
+// Errorf calls Output to log with ERRO level and given format
 func (l *Logger) Errorf(f string, a ...interface{}) {
 	l.Output(2, ERRO, fmt.Sprintf(f, a...))
 }

@@ -9,11 +9,27 @@ var defaultLevel = INFO
 var defaultLogger = New("")
 
 var (
-	Level    = defaultLogger.Level
+	// Level returns the level of default logger
+	Level = defaultLogger.Level
+
+	// SetLevel sets the level of default logger
 	SetLevel = defaultLogger.SetLevel
-	Print    = defaultLogger.Print
-	Printf   = defaultLogger.Printf
-	Println  = defaultLogger.Println
-	Fatal    = defaultLogger.Fatal
-	Fatalf   = defaultLogger.Fatalf
+
+	// Print calls Output to print to the default logger.
+	// Arguments are handled in the manner of fmt.Print.
+	Print = defaultLogger.Print
+
+	// Printf calls Output to print to the default logger.
+	// Arguments are handled in the manner of fmt.Printf.
+	Printf = defaultLogger.Printf
+
+	// Println calls Output to print to the default logger.
+	// Arguments are handled in the manner of fmt.Println.
+	Println = defaultLogger.Println
+
+	// Fatal is equivalent to Print() followed by a call to os.Exit(1).
+	Fatal = defaultLogger.Fatal
+
+	// Fatalf is equivalent to Print() followed by a call to os.Exit(1).
+	Fatalf = defaultLogger.Fatalf
 )

@@ -22,6 +22,7 @@ func painter(c color, s string) string {
 	return string(c) + s + colorRST
 }
 
+// IsTerminal returns true if the given writer supports colored output
 func IsTerminal(w io.Writer) bool {
 	var fd int
 	switch w {

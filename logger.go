@@ -1,19 +1,23 @@
 package log
 
+// Namer represents a named object
 type Namer interface {
 	Name() string
 }
 
+// Leveler represents a leveled object
 type Leveler interface {
 	Level() LevelType
 	SetLevel(lv LevelType)
 }
 
+// NamedLeveler is the combination of Namer and Leveler
 type NamedLeveler interface {
 	Namer
 	Leveler
 }
 
+// MultiHandler represents an object with multiple logging handlers
 type MultiHandler interface {
 	AddHandler(h Handler)
 	RemoveHandler(h Handler)
@@ -40,6 +44,7 @@ type SimpleLogger interface {
 	Fataler
 }
 
+// RPCLogger contains a SimpleLogger with extra RPC APIs
 type RPCLogger interface {
 	SimpleLogger
 	// RPC APIs
