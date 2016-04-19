@@ -10,10 +10,10 @@ import (
 type color string
 
 const (
-	Blue   = "\x1b[0;34m"
-	Green  = "\x1b[0;32m"
-	Yellow = "\x1b[0;33m"
-	Red    = "\x1b[0;31m"
+	colorBlue   = "\x1b[0;34m"
+	colorGreen  = "\x1b[0;32m"
+	colorYellow = "\x1b[0;33m"
+	colorRed    = "\x1b[0;31m"
 
 	colorRST = "\x1b[0;m"
 )
@@ -22,6 +22,7 @@ func painter(c color, s string) string {
 	return string(c) + s + colorRST
 }
 
+// IsTerminal returns true if the given writer supports colored output
 func IsTerminal(w io.Writer) bool {
 	var fd int
 	switch w {
@@ -34,7 +35,7 @@ func IsTerminal(w io.Writer) bool {
 	default:
 		return false
 	}
-	var termios Termios
+	var termios syscall.Termios
 	_, _, err := syscall.Syscall6(syscall.SYS_IOCTL, uintptr(fd), ioctlReadTermios, uintptr(unsafe.Pointer(&termios)), 0, 0, 0)
 	return err == 0
 }

@@ -77,13 +77,14 @@ func TestLevelPriority(t *testing.T) {
 }
 
 func TestLevel(t *testing.T) {
-	expected := "W: WarnLog\n"
+	expected := "E: ErrorLog\n"
 	var b bytes.Buffer
 	l := newLogger(t, &b, "{{l}}: {{}}")
-	l.SetLevel(WARN)
+	l.SetLevel(ERRO)
 	l.Debug("DebugLog")
 	l.Info("InfoLog")
 	l.Warn("WarnLog")
+	l.Error("ErrorLog")
 
 	if b.String() != expected {
 		t.Errorf("Expected:\n%v\nGot:\n%v", expected, b.String())

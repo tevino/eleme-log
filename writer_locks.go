@@ -5,12 +5,12 @@ import (
 	"sync"
 )
 
-type WriterLocks struct {
+type writerLocker struct {
 	m  map[io.Writer]*sync.Mutex
 	mu sync.RWMutex
 }
 
-func (wl *WriterLocks) Lock(w io.Writer) {
+func (wl *writerLocker) Lock(w io.Writer) {
 	wl.mu.RLock()
 	if l, ok := wl.m[w]; ok {
 		l.Lock()
@@ -27,10 +27,16 @@ func (wl *WriterLocks) Lock(w io.Writer) {
 	}
 }
 
-func (wl *WriterLocks) Unlock(w io.Writer) {
+func (wl *writerLocker) Unlock(w io.Writer) {
 	wl.mu.RLock()
 	if l, ok := wl.m[w]; ok {
 		l.Unlock()
 	}
 	defer wl.mu.RUnlock()
+}
+
+func newWriterLocker() *writerLocker {
+	return &writerLocker{
+		m: make(map[io.Writer]*sync.Mutex),
+	}
 }

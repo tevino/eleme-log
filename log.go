@@ -18,10 +18,17 @@ import (
 type LevelType int
 
 const (
+	// NOTSET indicates the logger level not set
 	NOTSET LevelType = iota
+	// DEBUG indicates the logger level DEBUG
 	DEBUG
+	// INFO indicates the logger level INFO
 	INFO
+	// WARN indicates the logger level WARNING
 	WARN
+	// ERRO indicates the logger level ERROR
+	ERRO
+	// FATA indicates the logger level FATAL
 	FATA
 )
 
@@ -36,23 +43,28 @@ var LevelName = map[LevelType]string{
 	DEBUG: "DEBUG",
 	INFO:  "INFO",
 	WARN:  "WARN",
+	ERRO:  "ERRO",
 	FATA:  "FATA",
 }
 
 var levelColor = map[LevelType]color{
-	DEBUG: Blue,
-	INFO:  Green,
-	WARN:  Yellow,
-	FATA:  Red,
+	DEBUG: colorBlue,
+	INFO:  colorGreen,
+	WARN:  colorYellow,
+	ERRO:  colorRed,
+	FATA:  colorRed,
 }
 
 var levelFlag = map[string]LevelType{
 	"debug": DEBUG,
 	"info":  INFO,
 	"warn":  WARN,
+	"erro":  ERRO,
 	"fata":  FATA,
 }
 
+// Logger is an object for logging with a set of configurations, including
+// name, level, logging format, and multiple handlers
 type Logger struct {
 	sync.RWMutex
 	wg        sync.WaitGroup
@@ -310,6 +322,18 @@ func (l *Logger) Warn(a ...interface{}) {
 // Warnf calls Output to log with WARN level and given format
 func (l *Logger) Warnf(f string, a ...interface{}) {
 	l.Output(2, WARN, fmt.Sprintf(f, a...))
+}
+
+// Error APIs
+
+// Error calls Output to log with ERRO level
+func (l *Logger) Error(a ...interface{}) {
+	l.Output(2, ERRO, fmt.Sprint(a...))
+}
+
+// Errorf calls Output to log with ERRO level and given format
+func (l *Logger) Errorf(f string, a ...interface{}) {
+	l.Output(2, ERRO, fmt.Sprintf(f, a...))
 }
 
 // Fatal APIs

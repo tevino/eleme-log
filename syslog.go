@@ -36,7 +36,9 @@ func (sh *SyslogHandler) Log(r *Record) {
 		sh.w.Info(b)
 	case WARN:
 		sh.w.Warning(b)
-	case FATA:
+	case ERRO:
 		sh.w.Err(b)
+	case FATA:
+		sh.w.Crit(b)
 	}
 }

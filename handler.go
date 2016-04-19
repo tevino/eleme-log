@@ -1,14 +1,11 @@
 package log
 
-import (
-	"io"
-	"sync"
-)
+import "io"
 
-var writerLocks WriterLocks
+var writerLocks *writerLocker
 
 func init() {
-	writerLocks = WriterLocks{m: make(map[io.Writer]*sync.Mutex)}
+	writerLocks = newWriterLocker()
 }
 
 // Handler represents a handler of Record
