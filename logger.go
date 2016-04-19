@@ -32,6 +32,7 @@ type SimpleLogger interface {
 	Printer
 	Infoer
 	Warner
+	Errorer
 	Fataler
 }
 
@@ -69,6 +70,13 @@ type Warner interface {
 	Warnf(f string, a ...interface{})
 }
 
+// Errorer represents a logger with Error APIs
+type Errorer interface {
+	Error(a ...interface{})
+	Errorf(f string, a ...interface{})
+}
+
+// Fataler represents a logger with Fatal APIs
 type Fataler interface {
 	// Fatal APIs
 	Fatal(a ...interface{})
