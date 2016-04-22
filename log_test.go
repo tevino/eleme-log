@@ -39,12 +39,12 @@ func TestFileLine(t *testing.T) {
 func newLogger(t *testing.T, w io.Writer, f string) SimpleLogger {
 	l := NewWithWriter("test", nil)
 	h, err := NewStreamHandler(w, f)
-	h.Colored(false)
-	l.AddHandler(h)
 	if err != nil {
 		t.Error("error creating stream handler: ", err)
 		t.FailNow()
 	}
+	h.Colored(false)
+	l.AddHandler(h)
 	return l
 }
 
@@ -148,46 +148,6 @@ func TestGlobalAppID(t *testing.T) {
 	defer SetGlobalAppID("")
 
 	l.Info("InfoLog")
-	if buf.String() != expected {
-		t.Errorf("Expected:\n%s\nGot:\n%s", expected, buf.String())
-	}
-}
-
-func TestSetRPCID(t *testing.T) {
-	var buf bytes.Buffer
-	l := newLogger(t, &buf, "[{{rpc_id}}] ## {{}}")
-	rpcLog := l.(RPCLogger)
-
-	expectedNil := "[-] ## InfoLog\n"
-	rpcLog.Info("InfoLog")
-	if buf.String() != expectedNil {
-		t.Errorf("Expected:\n%s\nGot:\n%s", expectedNil, buf.String())
-	}
-
-	buf.Reset()
-	expected := "[test.rpcid] ## InfoLog\n"
-	rpcLog.SetRPCID("test.rpcid")
-	rpcLog.Info("InfoLog")
-	if buf.String() != expected {
-		t.Errorf("Expected:\n%s\nGot:\n%s", expected, buf.String())
-	}
-}
-
-func TestSetRequestID(t *testing.T) {
-	var buf bytes.Buffer
-	l := newLogger(t, &buf, "[{{request_id}}] ## {{}}")
-	rpcLog := l.(RPCLogger)
-
-	expectedNil := "[-] ## InfoLog\n"
-	rpcLog.Info("InfoLog")
-	if buf.String() != expectedNil {
-		t.Errorf("Expected:\n%s\nGot:\n%s", expectedNil, buf.String())
-	}
-
-	buf.Reset()
-	expected := "[test.request_id] ## InfoLog\n"
-	rpcLog.SetRequestID("test.request_id")
-	rpcLog.Info("InfoLog")
 	if buf.String() != expected {
 		t.Errorf("Expected:\n%s\nGot:\n%s", expected, buf.String())
 	}

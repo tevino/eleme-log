@@ -3,7 +3,6 @@ package log
 import (
 	"errors"
 	"flag"
-	"fmt"
 	"io"
 	"os"
 	"runtime"
@@ -78,7 +77,7 @@ type Logger struct {
 }
 
 // New creates a Logger with Stdout as default output
-func New(name string) *Logger {
+func New(name string) SimpleLogger {
 	return NewWithWriter(name, os.Stdout)
 }
 
@@ -96,12 +95,6 @@ func NewWithWriter(name string, w io.Writer) *Logger {
 		l.AddHandler(hdr)
 	}
 	return l
-}
-
-// NewRPCLogger creates a Logger with given name as a RPCLogger
-func NewRPCLogger(name string) RPCLogger {
-	// TODO: differentiate RPCLogger and Logger
-	return New(name)
 }
 
 // SetGlobalLevel sets the global log level
@@ -293,77 +286,77 @@ func (l *Logger) Output(calldepth int, lv LevelType, s string) {
 
 // Debug calls Output to log with DEBUG level
 func (l *Logger) Debug(a ...interface{}) {
-	l.Output(2, DEBUG, fmt.Sprint(a...))
+	NewRecord(l, 2).Debug(a...)
 }
 
 // Debugf calls Output to log with DEBUG level and given format
 func (l *Logger) Debugf(format string, a ...interface{}) {
-	l.Output(2, DEBUG, fmt.Sprintf(format, a...))
+	NewRecord(l, 2).Debugf(format, a...)
 }
 
 // Print APIs
 
 // Print calls Output to log with default level
 func (l *Logger) Print(a ...interface{}) {
-	l.Output(2, l.Level(), fmt.Sprint(a...))
+	NewRecord(l, 2).Print(a...)
 }
 
 // Println calls Output to log with default level
 func (l *Logger) Println(a ...interface{}) {
-	l.Output(2, l.Level(), fmt.Sprint(a...))
+	NewRecord(l, 2).Println(a...)
 }
 
 // Printf calls Output to log with default level and given format
 func (l *Logger) Printf(f string, a ...interface{}) {
-	l.Output(2, l.Level(), fmt.Sprintf(f, a...))
+	NewRecord(l, 2).Printf(f, a...)
 }
 
 // Info APIs
 
 // Info calls Output to log with INFO level
 func (l *Logger) Info(a ...interface{}) {
-	l.Output(2, INFO, fmt.Sprint(a...))
+	NewRecord(l, 2).Info(a...)
 }
 
 // Infof calls Output to log with INFO level and given format
 func (l *Logger) Infof(f string, a ...interface{}) {
-	l.Output(2, INFO, fmt.Sprintf(f, a...))
+	NewRecord(l, 2).Infof(f, a...)
 }
 
 // Warn APIs
 
 // Warn calls Output to log with WARN level
 func (l *Logger) Warn(a ...interface{}) {
-	l.Output(2, WARN, fmt.Sprint(a...))
+	NewRecord(l, 2).Warn(a...)
 }
 
 // Warnf calls Output to log with WARN level and given format
 func (l *Logger) Warnf(f string, a ...interface{}) {
-	l.Output(2, WARN, fmt.Sprintf(f, a...))
+	NewRecord(l, 2).Warnf(f, a...)
 }
 
 // Error APIs
 
 // Error calls Output to log with ERRO level
 func (l *Logger) Error(a ...interface{}) {
-	l.Output(2, ERRO, fmt.Sprint(a...))
+	NewRecord(l, 2).Error(a...)
 }
 
 // Errorf calls Output to log with ERRO level and given format
 func (l *Logger) Errorf(f string, a ...interface{}) {
-	l.Output(2, ERRO, fmt.Sprintf(f, a...))
+	NewRecord(l, 2).Errorf(f, a...)
 }
 
 // Fatal APIs
 
 // Fatal calls Output to log with FATA level followed by a call to os.Exit(1)
 func (l *Logger) Fatal(a ...interface{}) {
-	l.Output(2, FATA, fmt.Sprint(a...))
+	NewRecord(l, 2).Fatal(a...)
 	os.Exit(1)
 }
 
 // Fatalf calls Output to log with FATA level with given format, followed by a call to os.Exit(1)
 func (l *Logger) Fatalf(f string, a ...interface{}) {
-	l.Output(2, FATA, fmt.Sprintf(f, a...))
+	NewRecord(l, 2).Fatalf(f, a...)
 	os.Exit(1)
 }
