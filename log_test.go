@@ -68,16 +68,36 @@ func TestAsync(t *testing.T) {
 		buf:    bytes.NewBuffer(make([]byte, 0)),
 	}
 	l := newLogger(t, w, "{{}}")
+
+	w1 := &fakeWriter{
+		writed: make(chan bool, 10),
+		buf:    bytes.NewBuffer(make([]byte, 0)),
+	}
+	h, _ := NewStreamHandler(w1, "{{}}")
+	h.Colored(false)
+	l.AddHandler(h)
+
 	l.SetAsync(true)
 	expected := "Test_Async\n"
 	l.Info("Test_Async")
-	select {
-	case <-w.writed:
-		if w.String() != expected {
-			t.Errorf("Test Async Error, want=%s got=%s", w.String(), expected)
+
+	realWrited := 0
+outer:
+	for realWrited < 2 {
+		select {
+		case <-w.writed:
+			realWrited++
+		case <-w1.writed:
+			realWrited++
+		case <-time.After(time.Millisecond * 200):
+			t.Errorf("Test Async Timeout, realWrited=%d", realWrited)
+			break outer
 		}
-	case <-time.After(time.Millisecond * 200):
-		t.Errorf("Test Async Timeout!!")
+		if realWrited == 2 {
+			if w.String() != expected || w1.String() != expected {
+				t.Errorf("Test Async Error, want=%s want_w1=%s got=%s", w.String(), w1.String(), expected)
+			}
+		}
 	}
 }
 
