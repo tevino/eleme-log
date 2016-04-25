@@ -46,6 +46,40 @@ func newLogger(t *testing.T, w io.Writer, f string) SimpleLogger {
 	return l
 }
 
+type fakeWriter struct {
+	writed chan bool
+	buf    *bytes.Buffer
+}
+
+func (f *fakeWriter) Write(p []byte) (n int, err error) {
+	f.buf.Write(p)
+	f.writed <- true
+	return
+}
+
+func (f *fakeWriter) String() string {
+	return f.buf.String()
+}
+
+func TestAsync(t *testing.T) {
+	w := &fakeWriter{
+		writed: make(chan bool, 10),
+		buf:    bytes.NewBuffer(make([]byte, 0)),
+	}
+	l := newLogger(t, w, "{{}}")
+	l.SetAsync(true)
+	expected := "Test_Async\n"
+	l.Info("Test_Async")
+	select {
+	case <-w.writed:
+		if w.String() != expected {
+			t.Errorf("Test Async Error, want=%s got=%s", w.String(), expected)
+		}
+	case <-time.After(time.Millisecond * 200):
+		t.Errorf("Test Async Timeout!!")
+	}
+}
+
 func TestGlobalLevel(t *testing.T) {
 	expected := "W: WarnLog\n"
 	var b bytes.Buffer

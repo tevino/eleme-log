@@ -17,6 +17,11 @@ type NamedLeveler interface {
 	Leveler
 }
 
+// AsyncedLogger async log
+type AsyncedLogger interface {
+	SetAsync(async bool)
+}
+
 // MultiHandler represents an object with multiple logging handlers
 type MultiHandler interface {
 	AddHandler(h Handler)
@@ -31,6 +36,7 @@ type MultiHandler interface {
 type SimpleLogger interface {
 	// Basic
 	NamedLeveler
+	AsyncedLogger
 
 	// multiple handlers
 	MultiHandler
