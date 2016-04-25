@@ -28,7 +28,7 @@ func NewSyslogHandlerWithFormat(w *syslog.Writer, f string) (*SyslogHandler, err
 
 // Log prints the Record info syslog writer
 func (sh *SyslogHandler) Log(r *Record) {
-	b := sh.Formatter.Format(r)
+	b := string(sh.Formatter.Format(r))
 	switch r.lv {
 	case DEBUG:
 		sh.w.Debug(b)
