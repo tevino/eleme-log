@@ -67,14 +67,16 @@ var levelFlag = map[string]LevelType{
 // name, level, logging format, and multiple handlers
 type Logger struct {
 	sync.RWMutex
-	wg        sync.WaitGroup
-	name      string
-	lv        LevelType
-	tpl       *template.Template
-	handlers  map[Handler]bool
-	rpcID     string
-	requestID string
-	async     bool
+	wg         sync.WaitGroup
+	name       string
+	lv         LevelType
+	tpl        *template.Template
+	handlers   map[Handler]bool
+	rpcID      string
+	requestID  string
+	async      bool
+	async_chan chan func()
+	subnums    int
 }
 
 // New creates a Logger with Stdout as default output
@@ -152,6 +154,11 @@ func (l *Logger) AddHandler(h Handler) {
 	defer l.Unlock()
 	if !l.handlers[h] {
 		l.handlers[h] = true
+	}
+
+	if l.async {
+		l.subnums++
+		l.startASub()
 	}
 }
 
@@ -236,6 +243,27 @@ func (l *Logger) SetAsync(async bool) {
 	l.Lock()
 	defer l.Unlock()
 	l.async = async
+	l.async_chan = make(chan func(), 2000)
+
+	hNums := len(l.handlers) + 1
+	// only add subcribe nums when subnums smaller than
+	// handler nums and add handler
+	// remove handler doesn't matter
+	if l.subnums != hNums {
+		for i := l.subnums; i < hNums; i++ {
+			l.subnums++
+			l.startASub()
+		}
+	}
+}
+
+func (l *Logger) startASub() {
+	go func() {
+		for {
+			f := <-l.async_chan
+			f()
+		}
+	}()
 }
 
 // Output writes a log to all writers with given calldepth and level
@@ -270,7 +298,11 @@ func (l *Logger) Output(calldepth int, lv LevelType, s string) {
 	defer l.Unlock()
 	if l.async {
 		for h := range l.handlers {
-			go h.Log(r)
+			// for foreach bug
+			hh := h
+			l.async_chan <- func() {
+				hh.Log(r)
+			}
 		}
 		return
 	}
