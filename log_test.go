@@ -6,6 +6,7 @@ import (
 	"io"
 	"os"
 	"strings"
+	"sync"
 	"testing"
 	"time"
 
@@ -29,7 +30,7 @@ func TestFileLine(t *testing.T) {
 	l.Info("TEST_TEST")
 
 	strs := strings.Split(buf.String(), " ")
-	if strs[4] != "log_test.go:29" {
+	if strs[4] != "log_test.go:30" {
 		t.Errorf("FileLine Error: %s", buf.String())
 	}
 }
@@ -315,4 +316,61 @@ func BenchmarkTime(b *testing.B) {
 	for i := 0; i < b.N; i++ {
 		hdr._time(r)
 	}
+}
+
+type emptyWriter struct {
+	sync.Mutex
+	times     int
+	waitTimes int
+	writed    chan bool
+}
+
+func (w *emptyWriter) Write(p []byte) (n int, err error) {
+	w.Lock()
+	w.times++
+	if w.times == w.waitTimes {
+		w.writed <- true
+	}
+	w.Unlock()
+
+	return len(p), nil
+}
+
+func BenchmarkLogNoAsync(b *testing.B) {
+	w := &emptyWriter{
+		sync.Mutex{},
+		0,
+		b.N,
+		make(chan bool, 10),
+	}
+
+	l := NewWithWriter("test", nil)
+	h, _ := NewStreamHandler(w, "{{}}")
+	h.Colored(false)
+	l.AddHandler(h)
+
+	for i := 0; i < b.N; i++ {
+		l.Info("TEST_TEST_TEST")
+	}
+}
+
+func BenchmarkLogAsync(b *testing.B) {
+	w := &emptyWriter{
+		sync.Mutex{},
+		0,
+		b.N,
+		make(chan bool, 10),
+	}
+
+	l := NewWithWriter("test", nil)
+	h, _ := NewStreamHandler(w, "{{}}")
+	h.Colored(false)
+	l.AddHandler(h)
+	l.SetAsync(true)
+
+	for i := 0; i < b.N; i++ {
+		l.Info("TEST_TEST_TEST")
+	}
+
+	<-w.writed
 }
