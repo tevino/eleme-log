@@ -6,6 +6,7 @@ import (
 	"io"
 	"os"
 	"strings"
+	"sync"
 	"testing"
 	"time"
 
@@ -29,7 +30,7 @@ func TestFileLine(t *testing.T) {
 	l.Info("TEST_TEST")
 
 	strs := strings.Split(buf.String(), " ")
-	if strs[4] != "log_test.go:29" {
+	if strs[4] != "log_test.go:30" {
 		t.Errorf("FileLine Error: %s", buf.String())
 	}
 }
@@ -44,6 +45,60 @@ func newLogger(t *testing.T, w io.Writer, f string) SimpleLogger {
 		t.FailNow()
 	}
 	return l
+}
+
+type fakeWriter struct {
+	writed chan bool
+	buf    *bytes.Buffer
+}
+
+func (f *fakeWriter) Write(p []byte) (n int, err error) {
+	f.buf.Write(p)
+	f.writed <- true
+	return
+}
+
+func (f *fakeWriter) String() string {
+	return f.buf.String()
+}
+
+func TestAsync(t *testing.T) {
+	w := &fakeWriter{
+		writed: make(chan bool, 10),
+		buf:    bytes.NewBuffer(make([]byte, 0)),
+	}
+	l := newLogger(t, w, "{{}}")
+
+	w1 := &fakeWriter{
+		writed: make(chan bool, 10),
+		buf:    bytes.NewBuffer(make([]byte, 0)),
+	}
+	h, _ := NewStreamHandler(w1, "{{}}")
+	h.Colored(false)
+	l.AddHandler(h)
+
+	l.SetAsync(true)
+	expected := "Test_Async\n"
+	l.Info("Test_Async")
+
+	realWrited := 0
+outer:
+	for realWrited < 2 {
+		select {
+		case <-w.writed:
+			realWrited++
+		case <-w1.writed:
+			realWrited++
+		case <-time.After(time.Millisecond * 200):
+			t.Errorf("Test Async Timeout, realWrited=%d", realWrited)
+			break outer
+		}
+		if realWrited == 2 {
+			if w.String() != expected || w1.String() != expected {
+				t.Errorf("Test Async Error, want=%s want_w1=%s got=%s", w.String(), w1.String(), expected)
+			}
+		}
+	}
 }
 
 func TestGlobalLevel(t *testing.T) {
@@ -281,4 +336,61 @@ func BenchmarkTime(b *testing.B) {
 	for i := 0; i < b.N; i++ {
 		hdr._time(r)
 	}
+}
+
+type emptyWriter struct {
+	sync.Mutex
+	times     int
+	waitTimes int
+	writed    chan bool
+}
+
+func (w *emptyWriter) Write(p []byte) (n int, err error) {
+	w.Lock()
+	w.times++
+	if w.times == w.waitTimes {
+		w.writed <- true
+	}
+	w.Unlock()
+
+	return len(p), nil
+}
+
+func BenchmarkLogNoAsync(b *testing.B) {
+	w := &emptyWriter{
+		sync.Mutex{},
+		0,
+		b.N,
+		make(chan bool, 10),
+	}
+
+	l := NewWithWriter("test", nil)
+	h, _ := NewStreamHandler(w, "{{}}")
+	h.Colored(false)
+	l.AddHandler(h)
+
+	for i := 0; i < b.N; i++ {
+		l.Info("TEST_TEST_TEST")
+	}
+}
+
+func BenchmarkLogAsync(b *testing.B) {
+	w := &emptyWriter{
+		sync.Mutex{},
+		0,
+		b.N,
+		make(chan bool, 10),
+	}
+
+	l := NewWithWriter("test", nil)
+	h, _ := NewStreamHandler(w, "{{}}")
+	h.Colored(false)
+	l.AddHandler(h)
+	l.SetAsync(true)
+
+	for i := 0; i < b.N; i++ {
+		l.Info("TEST_TEST_TEST")
+	}
+
+	<-w.writed
 }

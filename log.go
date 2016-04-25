@@ -74,6 +74,7 @@ type Logger struct {
 	handlers  map[Handler]bool
 	rpcID     string
 	requestID string
+	async     bool
 }
 
 // New creates a Logger with Stdout as default output
@@ -230,6 +231,13 @@ func (l *Logger) RequestID() string {
 	return l.requestID
 }
 
+// SetAsync set output as async
+func (l *Logger) SetAsync(async bool) {
+	l.RLock()
+	defer l.RUnlock()
+	l.async = async
+}
+
 // Output writes a log to all writers with given calldepth and level
 //
 // Normally, you won't need this.
@@ -258,9 +266,16 @@ func (l *Logger) Output(calldepth int, lv LevelType, s string) {
 	}
 	l.RUnlock()
 
-	var wg sync.WaitGroup
 	l.Lock()
 	defer l.Unlock()
+	if l.async {
+		for h := range l.handlers {
+			go h.Log(r)
+		}
+		return
+	}
+
+	var wg sync.WaitGroup
 	for h := range l.handlers {
 		wg.Add(1)
 		go func(h Handler, r *Record) {
