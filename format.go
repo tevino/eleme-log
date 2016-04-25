@@ -82,10 +82,10 @@ func (f *Formatter) SetFormat(tpl string) error {
 }
 
 // Format formats a Record with set format
-func (f *Formatter) Format(r *Record) string {
-	var buf bytes.Buffer
+func (f *Formatter) Format(r *Record) []byte {
+	var buf bytes.Buffer // TODO: use sync.Pool
 	f.tpl.Execute(&buf, r)
-	return buf.String()
+	return buf.Bytes()
 }
 
 // TODO: the 'if color then paint' is ugly!!

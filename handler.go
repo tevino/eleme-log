@@ -48,5 +48,5 @@ func (sw *StreamHandler) Log(r *Record) {
 	b := sw.Formatter.Format(r)
 	writerLocks.Lock(sw.writer)
 	defer writerLocks.Unlock(sw.writer)
-	sw.writer.Write([]byte(b))
+	sw.writer.Write(b)
 }
