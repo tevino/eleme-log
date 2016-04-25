@@ -3,14 +3,17 @@ package log
 import "io"
 
 var writerLocks *writerLocker
+var wSupervisor *writerSupervisor
 
 func init() {
 	writerLocks = newWriterLocker()
+	wSupervisor = newWriterSupervisor()
 }
 
 // Handler represents a handler of Record
 type Handler interface {
 	Log(r *Record)
+	AsyncLog(r *Record)
 }
 
 // StreamHandler is a Handler of Stream writer e.g. console
@@ -49,4 +52,14 @@ func (sw *StreamHandler) Log(r *Record) {
 	writerLocks.Lock(sw.writer)
 	defer writerLocks.Unlock(sw.writer)
 	sw.writer.Write(b)
+}
+
+// AsyncLog print the Record by worker
+func (sw *StreamHandler) AsyncLog(r *Record) {
+	wSupervisor.Write(sw.writer, func() {
+		b := sw.Formatter.Format(r)
+		writerLocks.Lock(sw.writer)
+		defer writerLocks.Unlock(sw.writer)
+		sw.writer.Write([]byte(b))
+	})
 }
