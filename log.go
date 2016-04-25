@@ -233,8 +233,8 @@ func (l *Logger) RequestID() string {
 
 // SetAsync set output as async
 func (l *Logger) SetAsync(async bool) {
-	l.RLock()
-	defer l.RUnlock()
+	l.Lock()
+	defer l.Unlock()
 	l.async = async
 }
 
