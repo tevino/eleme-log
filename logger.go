@@ -54,8 +54,8 @@ type SimpleLogger interface {
 type RPCLogger interface {
 	SimpleLogger
 	// RPC APIs
-	WithRPCID(string) *Record
-	WithRequestID(string) *Record
+	WithRPCID(string) RPCLogger
+	WithRequestID(string) RPCLogger
 }
 
 // Debugger represents a logger with Debug APIs

@@ -4,7 +4,7 @@ import "log/syslog"
 
 // SyslogHandler can send log to syslog
 type SyslogHandler struct {
-	*Formatter
+	Formatter
 	w *syslog.Writer
 }
 
@@ -13,23 +13,26 @@ type SyslogHandler struct {
 //
 //	"[{{app_id}} {{rpc_id}} {{request_id}}] ## {{}}"
 func NewSyslogHandler(w *syslog.Writer) (*SyslogHandler, error) {
-	return NewSyslogHandlerWithFormat(w, syslogTpl)
+	f, err := NewRPCFormatter(syslogTpl, false)
+	if err != nil {
+		return nil, err
+	}
+	return NewSyslogHandlerWithFormat(w, f), nil
 }
 
 // NewSyslogHandlerWithFormat is just like NewSyslogHandler but with customized
 // format string
-func NewSyslogHandlerWithFormat(w *syslog.Writer, f string) (*SyslogHandler, error) {
+func NewSyslogHandlerWithFormat(w *syslog.Writer, f Formatter) *SyslogHandler {
 	h := new(SyslogHandler)
 	h.w = w
-	formatter, err := NewFormatter(f, false)
-	h.Formatter = formatter
-	return h, err
+	h.Formatter = f
+	return h
 }
 
 // Log prints the Record info syslog writer
-func (sh *SyslogHandler) Log(r *Record) {
+func (sh *SyslogHandler) Log(r Record) {
 	b := string(sh.Formatter.Format(r))
-	switch r.lv {
+	switch r.Level() {
 	case DEBUG:
 		sh.w.Debug(b)
 	case INFO:

@@ -7,14 +7,14 @@ import (
 )
 
 func newRPCLogger(t *testing.T, w io.Writer, f string) RPCLogger {
-	l := &RPC{
-		Logger: NewWithWriter("test", nil),
-	}
-	h, err := NewStreamHandler(w, f)
+	l := NewRPCLogger("test")
+
+	format, err := NewRPCFormatter(f, false)
 	if err != nil {
 		t.Error("error creating stream handler: ", err)
 		t.FailNow()
 	}
+	h := NewStreamHandler(w, format)
 	h.Colored(false)
 	l.AddHandler(h)
 	return l
@@ -22,8 +22,7 @@ func newRPCLogger(t *testing.T, w io.Writer, f string) RPCLogger {
 
 func TestSetRPCID(t *testing.T) {
 	var buf bytes.Buffer
-	l := newRPCLogger(t, &buf, "[{{rpc_id}}] ## {{}}")
-	rpcLog := l.(RPCLogger)
+	rpcLog := newRPCLogger(t, &buf, "[{{rpc_id}}] ## {{}}")
 
 	expectedNil := "[-] ## InfoLog\n"
 	rpcLog.Info("InfoLog")
@@ -41,8 +40,7 @@ func TestSetRPCID(t *testing.T) {
 
 func TestSetRequestID(t *testing.T) {
 	var buf bytes.Buffer
-	l := newRPCLogger(t, &buf, "[{{request_id}}] ## {{}}")
-	rpcLog := l.(RPCLogger)
+	rpcLog := newRPCLogger(t, &buf, "[{{request_id}}] ## {{}}")
 
 	expectedNil := "[-] ## InfoLog\n"
 	rpcLog.Info("InfoLog")

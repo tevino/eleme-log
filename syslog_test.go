@@ -14,10 +14,12 @@ func TestSyslogtpl(t *testing.T) {
 	l.lv = INFO
 	l.handlers = make(map[Handler]bool)
 
-	hdr, err := NewStreamHandler(buf, syslogTpl)
+	f, err := NewRPCFormatter(syslogTpl, false)
 	if err != nil {
 		t.Fatalf("NewStreamHandler Error:%v", err)
 	}
+	hdr := NewStreamHandler(buf, f)
+
 	l.AddHandler(hdr)
 	SetGlobalAppID("samaritan.test")
 	defer SetGlobalAppID("")
