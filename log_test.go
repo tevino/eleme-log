@@ -365,18 +365,25 @@ func newEmptyWriter(N int, key int) (*emptyWriter, error) {
 }
 
 func (w *emptyWriter) Write(p []byte) (n int, err error) {
+
+	n, err = w.w.Write(p)
+
 	w.Lock()
 	w.times++
 	if w.times == w.waitTimes {
 		w.writed <- true
 	}
 	w.Unlock()
-
-	n, err = w.w.Write(p)
 	return
 }
 
+func initLockVisor() {
+	writerLocks = newWriterLocker()
+	wSupervisor = newWriterSupervisor()
+}
+
 func BenchmarkLogNoAsync(b *testing.B) {
+	initLockVisor()
 	w, err := newEmptyWriter(b.N, 11)
 	if err != nil {
 		b.Error(err)
@@ -395,6 +402,7 @@ func BenchmarkLogNoAsync(b *testing.B) {
 }
 
 func BenchmarkLogAsync(b *testing.B) {
+	initLockVisor()
 	w, err := newEmptyWriter(b.N, 12)
 	if err != nil {
 		b.Error(err)
@@ -410,10 +418,10 @@ func BenchmarkLogAsync(b *testing.B) {
 	for i := 0; i < b.N; i++ {
 		l.Info("TEST_TEST_TEST")
 	}
-	<-w.writed
 }
 
 func BenchmarkLogNoAsyncFiveHandler(b *testing.B) {
+	initLockVisor()
 	var arr [5]*emptyWriter
 	var err error
 	for i := range arr {
@@ -421,6 +429,7 @@ func BenchmarkLogNoAsyncFiveHandler(b *testing.B) {
 		if err != nil {
 			b.Error(err)
 		}
+		defer arr[i].w.Close()
 	}
 
 	l := NewWithWriter("test", nil)
@@ -440,7 +449,8 @@ func BenchmarkLogNoAsyncFiveHandler(b *testing.B) {
 }
 
 func BenchmarkLogAsyncFiveHandler(b *testing.B) {
-	var arr [5]*emptyWriter
+	initLockVisor()
+	arr := make([]*emptyWriter, 5)
 	var err error
 	for i := range arr {
 		arr[i], err = newEmptyWriter(b.N, i)
@@ -460,9 +470,5 @@ func BenchmarkLogAsyncFiveHandler(b *testing.B) {
 
 	for i := 0; i < b.N; i++ {
 		l.Info("TEST_TEST_TEST")
-	}
-
-	for i := range arr {
-		<-arr[i].writed
 	}
 }

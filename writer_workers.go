@@ -6,7 +6,7 @@ import (
 )
 
 const (
-	maxRecordChanSize = 5000
+	maxRecordChanSize = 100000
 )
 
 type writerWorker struct {
@@ -29,11 +29,11 @@ func (ws *writerSupervisor) Write(w io.Writer, f func()) {
 			w:  w,
 			ch: make(chan func(), maxRecordChanSize),
 		}
-		go func(w io.Writer, ch chan func()) {
+		go func(ch chan func()) {
 			for ff := range ch {
 				ff()
 			}
-		}(worker.w, worker.ch)
+		}(worker.ch)
 
 		ws.mu.Lock()
 		ws.m[w] = worker
@@ -43,7 +43,7 @@ func (ws *writerSupervisor) Write(w io.Writer, f func()) {
 	select {
 	case worker.ch <- f:
 	default:
-		go f()
+		//throw message if full
 	}
 }
 
