@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"strconv"
 	"strings"
 	"sync"
 	"testing"
@@ -30,7 +31,7 @@ func TestFileLine(t *testing.T) {
 	l.Info("TEST_TEST")
 
 	strs := strings.Split(buf.String(), " ")
-	if strs[4] != "log_test.go:30" {
+	if strs[4] != "log_test.go:31" {
 		t.Errorf("FileLine Error: %s", buf.String())
 	}
 }
@@ -343,6 +344,24 @@ type emptyWriter struct {
 	times     int
 	waitTimes int
 	writed    chan bool
+	w         io.WriteCloser
+}
+
+func newEmptyWriter(N int, key int) (*emptyWriter, error) {
+	filename := "/tmp/empty_writer" + strconv.Itoa(key)
+	f, err := os.OpenFile(filename, os.O_WRONLY|os.O_TRUNC|os.O_CREATE, 0666)
+	if err != nil {
+		return nil, err
+	}
+
+	ew := &emptyWriter{
+		sync.Mutex{},
+		0,
+		N,
+		make(chan bool, 10),
+		f,
+	}
+	return ew, nil
 }
 
 func (w *emptyWriter) Write(p []byte) (n int, err error) {
@@ -353,16 +372,16 @@ func (w *emptyWriter) Write(p []byte) (n int, err error) {
 	}
 	w.Unlock()
 
-	return len(p), nil
+	n, err = w.w.Write(p)
+	return
 }
 
 func BenchmarkLogNoAsync(b *testing.B) {
-	w := &emptyWriter{
-		sync.Mutex{},
-		0,
-		b.N,
-		make(chan bool, 10),
+	w, err := newEmptyWriter(b.N, 11)
+	if err != nil {
+		b.Error(err)
 	}
+	defer w.w.Close()
 
 	l := NewWithWriter("test", nil)
 	h, _ := NewStreamHandler(w, "{{}}")
@@ -372,15 +391,15 @@ func BenchmarkLogNoAsync(b *testing.B) {
 	for i := 0; i < b.N; i++ {
 		l.Info("TEST_TEST_TEST")
 	}
+	<-w.writed
 }
 
 func BenchmarkLogAsync(b *testing.B) {
-	w := &emptyWriter{
-		sync.Mutex{},
-		0,
-		b.N,
-		make(chan bool, 10),
+	w, err := newEmptyWriter(b.N, 12)
+	if err != nil {
+		b.Error(err)
 	}
+	defer w.w.Close()
 
 	l := NewWithWriter("test", nil)
 	h, _ := NewStreamHandler(w, "{{}}")
@@ -391,6 +410,59 @@ func BenchmarkLogAsync(b *testing.B) {
 	for i := 0; i < b.N; i++ {
 		l.Info("TEST_TEST_TEST")
 	}
-
 	<-w.writed
+}
+
+func BenchmarkLogNoAsyncFiveHandler(b *testing.B) {
+	var arr [5]*emptyWriter
+	var err error
+	for i := range arr {
+		arr[i], err = newEmptyWriter(b.N, i)
+		if err != nil {
+			b.Error(err)
+		}
+	}
+
+	l := NewWithWriter("test", nil)
+	for _, w := range arr {
+		h, _ := NewStreamHandler(w, "{{}}")
+		h.Colored(false)
+		l.AddHandler(h)
+	}
+
+	for i := 0; i < b.N; i++ {
+		l.Info("TEST_TEST_TEST")
+	}
+
+	for i := range arr {
+		<-arr[i].writed
+	}
+}
+
+func BenchmarkLogAsyncFiveHandler(b *testing.B) {
+	var arr [5]*emptyWriter
+	var err error
+	for i := range arr {
+		arr[i], err = newEmptyWriter(b.N, i)
+		if err != nil {
+			b.Error(err)
+		}
+		defer arr[i].w.Close()
+	}
+
+	l := NewWithWriter("test", nil)
+	for _, w := range arr {
+		h, _ := NewStreamHandler(w, "{{}}")
+		h.Colored(false)
+		l.AddHandler(h)
+	}
+	l.SetAsync(true)
+
+	for i := 0; i < b.N; i++ {
+		l.Info("TEST_TEST_TEST")
+	}
+
+	for i := range arr {
+		<-arr[i].writed
+	}
 }

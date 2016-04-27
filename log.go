@@ -266,18 +266,21 @@ func (l *Logger) Output(calldepth int, lv LevelType, s string) {
 	}
 	l.RUnlock()
 
-	var wg sync.WaitGroup
 	l.RLock()
 	defer l.RUnlock()
+	if l.async {
+		for h := range l.handlers {
+			h.AsyncLog(r)
+		}
+		return
+	}
+
+	var wg sync.WaitGroup
 	for h := range l.handlers {
 		wg.Add(1)
 		go func(h Handler, r *Record) {
 			defer wg.Done()
-			if l.async {
-				h.AsyncLog(r)
-			} else {
-				h.Log(r)
-			}
+			h.Log(r)
 		}(h, r)
 	}
 	wg.Wait()
