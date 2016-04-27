@@ -14,6 +14,14 @@ type writerWorker struct {
 	ch chan func()
 }
 
+func (w *writerWorker) Start() {
+	go func() {
+		for ff := range w.ch {
+			ff()
+		}
+	}()
+}
+
 type writerSupervisor struct {
 	m  map[io.Writer]*writerWorker
 	mu sync.RWMutex
@@ -29,14 +37,14 @@ func (ws *writerSupervisor) Do(w io.Writer, f func()) {
 			w:  w,
 			ch: make(chan func(), maxRecordChanSize),
 		}
-		go func(ch chan func()) {
-			for ff := range ch {
-				ff()
-			}
-		}(worker.ch)
 
 		ws.mu.Lock()
-		ws.m[w] = worker
+		if currentWorker, ok := ws.m[w]; ok {
+			worker = currentWorker
+		} else {
+			ws.m[w] = worker
+			worker.Start()
+		}
 		ws.mu.Unlock()
 	}
 
