@@ -10,7 +10,6 @@ const (
 )
 
 type writerWorker struct {
-	w  io.Writer
 	ch chan func()
 }
 
@@ -34,7 +33,6 @@ func (ws *writerSupervisor) Do(w io.Writer, f func()) {
 
 	if !ok {
 		worker = &writerWorker{
-			w:  w,
 			ch: make(chan func(), maxRecordChanSize),
 		}
 

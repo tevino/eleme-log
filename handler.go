@@ -13,7 +13,7 @@ func init() {
 // Handler represents a handler of Record
 type Handler interface {
 	Log(r *Record)
-	GetWriter() io.Writer
+	Writer() io.Writer
 }
 
 // StreamHandler is a Handler of Stream writer e.g. console
@@ -54,7 +54,7 @@ func (sw *StreamHandler) Log(r *Record) {
 	sw.writer.Write(b)
 }
 
-// GetWriter retuern the writer
-func (sw *StreamHandler) GetWriter() io.Writer {
+// Writer return the writer
+func (sw *StreamHandler) Writer() io.Writer {
 	return sw.writer
 }
