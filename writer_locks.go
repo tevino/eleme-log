@@ -13,8 +13,8 @@ type writerLocker struct {
 func (wl *writerLocker) Lock(w io.Writer) {
 	wl.mu.RLock()
 	if l, ok := wl.m[w]; ok {
-		l.Lock()
 		wl.mu.RUnlock()
+		l.Lock()
 	} else {
 		wl.mu.RUnlock()
 		// add new lock to map
@@ -29,10 +29,12 @@ func (wl *writerLocker) Lock(w io.Writer) {
 
 func (wl *writerLocker) Unlock(w io.Writer) {
 	wl.mu.RLock()
-	if l, ok := wl.m[w]; ok {
+	l, ok := wl.m[w]
+	wl.mu.RUnlock()
+
+	if ok {
 		l.Unlock()
 	}
-	defer wl.mu.RUnlock()
 }
 
 func newWriterLocker() *writerLocker {
