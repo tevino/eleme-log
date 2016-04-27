@@ -270,7 +270,11 @@ func (l *Logger) Output(calldepth int, lv LevelType, s string) {
 	defer l.RUnlock()
 	if l.async {
 		for h := range l.handlers {
-			h.AsyncLog(r)
+			// for loop variable bug
+			hh := h
+			wSupervisor.Do(h.GetWriter(), func() {
+				hh.Log(r)
+			})
 		}
 		return
 	}

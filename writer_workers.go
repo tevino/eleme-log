@@ -19,7 +19,7 @@ type writerSupervisor struct {
 	mu sync.RWMutex
 }
 
-func (ws *writerSupervisor) Write(w io.Writer, f func()) {
+func (ws *writerSupervisor) Do(w io.Writer, f func()) {
 	ws.mu.RLock()
 	worker, ok := ws.m[w]
 	ws.mu.RUnlock()
