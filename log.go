@@ -267,7 +267,6 @@ func (l *Logger) Output(calldepth int, lv LevelType, s string) {
 	l.RUnlock()
 
 	l.RLock()
-	defer l.RUnlock()
 	if l.async {
 		for h := range l.handlers {
 			// for loop variable bug
@@ -276,6 +275,7 @@ func (l *Logger) Output(calldepth int, lv LevelType, s string) {
 				hh.Log(r)
 			})
 		}
+		l.RUnlock()
 		return
 	}
 
@@ -287,6 +287,7 @@ func (l *Logger) Output(calldepth int, lv LevelType, s string) {
 			h.Log(r)
 		}(h, r)
 	}
+	l.RUnlock()
 	wg.Wait()
 }
 
