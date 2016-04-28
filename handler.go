@@ -3,14 +3,17 @@ package log
 import "io"
 
 var writerLocks *writerLocker
+var wSupervisor *writerSupervisor
 
 func init() {
 	writerLocks = newWriterLocker()
+	wSupervisor = newWriterSupervisor()
 }
 
 // Handler represents a handler of Record
 type Handler interface {
 	Log(r *Record)
+	Writer() io.Writer
 }
 
 // StreamHandler is a Handler of Stream writer e.g. console
@@ -49,4 +52,9 @@ func (sw *StreamHandler) Log(r *Record) {
 	writerLocks.Lock(sw.writer)
 	defer writerLocks.Unlock(sw.writer)
 	sw.writer.Write(b)
+}
+
+// Writer return the writer
+func (sw *StreamHandler) Writer() io.Writer {
+	return sw.writer
 }

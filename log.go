@@ -264,14 +264,16 @@ func (l *Logger) Output(calldepth int, lv LevelType, s string) {
 		requestID: l.requestID,
 		appID:     globalAppID,
 	}
-	l.RUnlock()
 
-	l.Lock()
-	defer l.Unlock()
 	if l.async {
 		for h := range l.handlers {
-			go h.Log(r)
+			// for loop variable bug
+			hh := h
+			wSupervisor.Do(h.Writer(), func() {
+				hh.Log(r)
+			})
 		}
+		l.RUnlock()
 		return
 	}
 
@@ -283,6 +285,7 @@ func (l *Logger) Output(calldepth int, lv LevelType, s string) {
 			h.Log(r)
 		}(h, r)
 	}
+	l.RUnlock()
 	wg.Wait()
 }
 
