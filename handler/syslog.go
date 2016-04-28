@@ -1,10 +1,15 @@
-package log
+package handler
 
-import "log/syslog"
+import (
+	"io"
+	"log/syslog"
+
+	"github.com/eleme/log"
+)
 
 // SyslogHandler can send log to syslog
 type SyslogHandler struct {
-	Formatter
+	log.Formatter
 	w *syslog.Writer
 }
 
@@ -13,8 +18,8 @@ type SyslogHandler struct {
 //
 //	"[{{app_id}} {{rpc_id}} {{request_id}}] ## {{}}"
 func NewSyslogHandler(w *syslog.Writer) (*SyslogHandler, error) {
-	f := NewBaseFormatter(false)
-	if err := f.ParseFormat(syslogTpl); err != nil {
+	f := log.NewBaseFormatter(false)
+	if err := f.ParseFormat(log.TplSyslog); err != nil {
 		return nil, err
 	}
 	return NewSyslogHandlerWithFormat(w, f), nil
@@ -22,7 +27,7 @@ func NewSyslogHandler(w *syslog.Writer) (*SyslogHandler, error) {
 
 // NewSyslogHandlerWithFormat is just like NewSyslogHandler but with customized
 // format string
-func NewSyslogHandlerWithFormat(w *syslog.Writer, f Formatter) *SyslogHandler {
+func NewSyslogHandlerWithFormat(w *syslog.Writer, f log.Formatter) *SyslogHandler {
 	h := new(SyslogHandler)
 	h.w = w
 	h.Formatter = f
@@ -30,18 +35,23 @@ func NewSyslogHandlerWithFormat(w *syslog.Writer, f Formatter) *SyslogHandler {
 }
 
 // Log prints the Record info syslog writer
-func (sh *SyslogHandler) Log(r Record) {
+func (sh *SyslogHandler) Log(r log.Record) {
 	b := string(sh.Formatter.Format(r))
 	switch r.Level() {
-	case DEBUG:
+	case log.DEBUG:
 		sh.w.Debug(b)
-	case INFO:
+	case log.INFO:
 		sh.w.Info(b)
-	case WARN:
+	case log.WARN:
 		sh.w.Warning(b)
-	case ERRO:
+	case log.ERRO:
 		sh.w.Err(b)
-	case FATA:
+	case log.FATA:
 		sh.w.Crit(b)
 	}
+}
+
+// Writer return the writer
+func (sh *SyslogHandler) Writer() io.Writer {
+	return sh.w
 }

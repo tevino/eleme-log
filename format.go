@@ -121,12 +121,12 @@ func (f *BaseFormatter) SetColored(colored bool) {
 	f.colored = colored
 }
 
-// TODO: the 'if color then paint' is ugly!!
+// TODO: the 'if color then Paint' is ugly!!
 
 func (f *BaseFormatter) _level(r Record) string {
 	s := LevelName[r.Level()]
 	if f.colored {
-		s = f.paint(r.Level(), s)
+		s = f.Paint(r.Level(), s)
 	}
 	return s
 }
@@ -134,7 +134,7 @@ func (f *BaseFormatter) _level(r Record) string {
 func (f *BaseFormatter) _l(r Record) string {
 	s := LevelName[r.Level()][0:1]
 	if f.colored {
-		s = f.paint(r.Level(), s)
+		s = f.Paint(r.Level(), s)
 	}
 	return s
 }
@@ -142,7 +142,7 @@ func (f *BaseFormatter) _l(r Record) string {
 func (f *BaseFormatter) _datetime(r Record) string {
 	s := r.Now().Format(LDatetime)
 	if f.colored {
-		s = f.paint(r.Level(), s)
+		s = f.Paint(r.Level(), s)
 	}
 	return s
 }
@@ -150,7 +150,7 @@ func (f *BaseFormatter) _datetime(r Record) string {
 func (f *BaseFormatter) _date(r Record) string {
 	s := r.Now().Format(LDate)
 	if f.colored {
-		s = f.paint(r.Level(), s)
+		s = f.Paint(r.Level(), s)
 	}
 	return s
 }
@@ -158,7 +158,7 @@ func (f *BaseFormatter) _date(r Record) string {
 func (f *BaseFormatter) _time(r Record) string {
 	s := r.Now().Format(LTime)
 	if f.colored {
-		s = f.paint(r.Level(), s)
+		s = f.Paint(r.Level(), s)
 	}
 	return s
 }
@@ -166,7 +166,7 @@ func (f *BaseFormatter) _time(r Record) string {
 func (f *BaseFormatter) _name(r Record) string {
 	s := r.Name()
 	if f.colored {
-		s = f.paint(r.Level(), s)
+		s = f.Paint(r.Level(), s)
 	}
 	return s
 }
@@ -174,7 +174,7 @@ func (f *BaseFormatter) _name(r Record) string {
 func (f *BaseFormatter) _pid(r Record) string {
 	s := strconv.Itoa(os.Getpid())
 	if f.colored {
-		s = f.paint(r.Level(), s)
+		s = f.Paint(r.Level(), s)
 	}
 	return s
 }
@@ -185,7 +185,7 @@ func (f *BaseFormatter) _appID(r Record) string {
 		s = "-"
 	}
 	if f.colored {
-		s = f.paint(r.Level(), s)
+		s = f.Paint(r.Level(), s)
 	}
 	return s
 }
@@ -199,7 +199,7 @@ func (f *BaseFormatter) _fileLine(r Record) string {
 		}
 	}
 	if f.colored {
-		s = f.paint(r.Level(), s)
+		s = f.Paint(r.Level(), s)
 	}
 	return s
 }
@@ -225,6 +225,7 @@ func (f *BaseFormatter) AddFuncMap(funcMap template.FuncMap) {
 	}
 }
 
-func (f *BaseFormatter) paint(lv LevelType, s string) string {
+// Paint used to Paint the log.
+func (f *BaseFormatter) Paint(lv LevelType, s string) string {
 	return painter(levelColor[lv], s)
 }

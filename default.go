@@ -1,8 +1,10 @@
 package log
 
 const (
-	defaultTpl = "{{level}} {{date}} {{time}} {{name}} {{}}"
-	syslogTpl  = "[{{app_id}} {{rpc_id}} {{request_id}}] ## {{}}"
+	// TplDefault is the default log format.
+	TplDefault = "{{level}} {{date}} {{time}} {{name}} {{}}"
+	// TplSyslog is the log format for syslog.
+	TplSyslog = "[{{app_id}} {{rpc_id}} {{request_id}}] ## {{}}"
 )
 
 var defaultLevel = INFO

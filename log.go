@@ -73,7 +73,7 @@ type Logger struct {
 	recordFactory RecordFactory
 }
 
-// New creates a Logger with Stdout as default output
+// New creates a Logger with Stdout as default Output
 func New(name string) SimpleLogger {
 	return NewWithWriter(name, os.Stdout)
 }
@@ -86,7 +86,7 @@ func NewWithWriter(name string, w io.Writer) *Logger {
 	l.handlers = make(map[Handler]bool)
 	if w != nil {
 		f := NewBaseFormatter(IsTerminal(w))
-		err := f.ParseFormat(defaultTpl)
+		err := f.ParseFormat(TplDefault)
 		if err != nil {
 			panic(err)
 		}
@@ -203,10 +203,10 @@ func (l *Logger) SetAsync(async bool) {
 	l.async = async
 }
 
-// output writes a log to all writers with given record.
+// Output writes a log to all writers with given record.
 //
 // Normally, you won't need this.
-func (l *Logger) output(record Record) {
+func (l *Logger) Output(record Record) {
 	l.RLock()
 	if l.async {
 		for h := range l.handlers {
@@ -239,7 +239,7 @@ func (l *Logger) Debug(a ...interface{}) {
 	if DEBUG < l.Level() {
 		return
 	}
-	l.output(l.recordFactory(l.Name(), 2, DEBUG, fmt.Sprint(a...)))
+	l.Output(l.recordFactory(l.Name(), 2, DEBUG, fmt.Sprint(a...)))
 }
 
 // Debugf calls Output to log with DEBUG level and given format
@@ -247,24 +247,24 @@ func (l *Logger) Debugf(format string, a ...interface{}) {
 	if DEBUG < l.Level() {
 		return
 	}
-	l.output(l.recordFactory(l.Name(), 2, DEBUG, fmt.Sprintf(format, a...)))
+	l.Output(l.recordFactory(l.Name(), 2, DEBUG, fmt.Sprintf(format, a...)))
 }
 
 // Print APIs
 
 // Print calls Output to log with default level
 func (l *Logger) Print(a ...interface{}) {
-	l.output(l.recordFactory(l.Name(), 2, l.Level(), fmt.Sprint(a...)))
+	l.Output(l.recordFactory(l.Name(), 2, l.Level(), fmt.Sprint(a...)))
 }
 
 // Println calls Output to log with default level
 func (l *Logger) Println(a ...interface{}) {
-	l.output(l.recordFactory(l.Name(), 2, l.Level(), fmt.Sprint(a...)))
+	l.Output(l.recordFactory(l.Name(), 2, l.Level(), fmt.Sprint(a...)))
 }
 
 // Printf calls Output to log with default level and given format
 func (l *Logger) Printf(f string, a ...interface{}) {
-	l.output(l.recordFactory(l.Name(), 2, l.Level(), fmt.Sprintf(f, a...)))
+	l.Output(l.recordFactory(l.Name(), 2, l.Level(), fmt.Sprintf(f, a...)))
 }
 
 // Info APIs
@@ -274,7 +274,7 @@ func (l *Logger) Info(a ...interface{}) {
 	if INFO < l.Level() {
 		return
 	}
-	l.output(l.recordFactory(l.Name(), 2, INFO, fmt.Sprint(a...)))
+	l.Output(l.recordFactory(l.Name(), 2, INFO, fmt.Sprint(a...)))
 }
 
 // Infof calls Output to log with INFO level and given format
@@ -282,7 +282,7 @@ func (l *Logger) Infof(f string, a ...interface{}) {
 	if INFO < l.Level() {
 		return
 	}
-	l.output(l.recordFactory(l.Name(), 2, INFO, fmt.Sprintf(f, a...)))
+	l.Output(l.recordFactory(l.Name(), 2, INFO, fmt.Sprintf(f, a...)))
 }
 
 // Warn APIs
@@ -292,7 +292,7 @@ func (l *Logger) Warn(a ...interface{}) {
 	if WARN < l.Level() {
 		return
 	}
-	l.output(l.recordFactory(l.Name(), 2, WARN, fmt.Sprint(a...)))
+	l.Output(l.recordFactory(l.Name(), 2, WARN, fmt.Sprint(a...)))
 }
 
 // Warnf calls Output to log with WARN level and given format
@@ -300,7 +300,7 @@ func (l *Logger) Warnf(f string, a ...interface{}) {
 	if WARN < l.Level() {
 		return
 	}
-	l.output(l.recordFactory(l.Name(), 2, WARN, fmt.Sprintf(f, a...)))
+	l.Output(l.recordFactory(l.Name(), 2, WARN, fmt.Sprintf(f, a...)))
 }
 
 // Error APIs
@@ -310,7 +310,7 @@ func (l *Logger) Error(a ...interface{}) {
 	if ERRO < l.Level() {
 		return
 	}
-	l.output(l.recordFactory(l.Name(), 2, ERRO, fmt.Sprint(a...)))
+	l.Output(l.recordFactory(l.Name(), 2, ERRO, fmt.Sprint(a...)))
 }
 
 // Errorf calls Output to log with ERRO level and given format
@@ -318,7 +318,7 @@ func (l *Logger) Errorf(f string, a ...interface{}) {
 	if ERRO < l.Level() {
 		return
 	}
-	l.output(l.recordFactory(l.Name(), 2, ERRO, fmt.Sprintf(f, a...)))
+	l.Output(l.recordFactory(l.Name(), 2, ERRO, fmt.Sprintf(f, a...)))
 }
 
 // Fatal APIs
@@ -328,7 +328,7 @@ func (l *Logger) Fatal(a ...interface{}) {
 	if FATA < l.Level() {
 		return
 	}
-	l.output(l.recordFactory(l.Name(), 2, FATA, fmt.Sprint(a...)))
+	l.Output(l.recordFactory(l.Name(), 2, FATA, fmt.Sprint(a...)))
 	os.Exit(1)
 }
 
@@ -337,6 +337,6 @@ func (l *Logger) Fatalf(f string, a ...interface{}) {
 	if FATA < l.Level() {
 		return
 	}
-	l.output(l.recordFactory(l.Name(), 2, FATA, fmt.Sprintf(f, a...)))
+	l.Output(l.recordFactory(l.Name(), 2, FATA, fmt.Sprintf(f, a...)))
 	os.Exit(1)
 }
