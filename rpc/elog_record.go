@@ -23,6 +23,6 @@ func NewELogRecord(name string, calldepth int, lv log.LevelType, msg string, rpc
 // NewELogRecordFactory return a record factory for RPCRecord.
 func NewELogRecordFactory(rpcID string, requestID string) log.RecordFactory {
 	return func(name string, calldepth int, lv log.LevelType, msg string) log.Record {
-		return NewELogRecord(name, calldepth+1, lv, msg, rpcID, requestID)
+		return NewELogRecord(name, calldepth+2, lv, msg, rpcID, requestID)
 	}
 }
