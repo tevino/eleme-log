@@ -48,21 +48,6 @@ func newLogger(t *testing.T, w io.Writer, f string) SimpleLogger {
 	return l
 }
 
-type fakeWriter struct {
-	writed chan bool
-	buf    *bytes.Buffer
-}
-
-func (f *fakeWriter) Write(p []byte) (n int, err error) {
-	f.buf.Write(p)
-	f.writed <- true
-	return
-}
-
-func (f *fakeWriter) String() string {
-	return f.buf.String()
-}
-
 func TestAsync(t *testing.T) {
 	w := &fakeWriter{
 		writed: make(chan bool, 10),
@@ -223,31 +208,6 @@ content: hi
 	}
 }
 
-func TestSyslogtpl(t *testing.T) {
-	buf := bytes.NewBuffer(make([]byte, 0, 100))
-
-	l := new(Logger)
-	l.name = "name"
-	l.lv = INFO
-	l.handlers = make(map[Handler]bool)
-
-	hdr, err := NewStreamHandler(buf, syslogTpl)
-	if err != nil {
-		t.Fatalf("NewStreamHandler Error:%v", err)
-	}
-	l.AddHandler(hdr)
-	SetGlobalAppID("samaritan.test")
-	defer SetGlobalAppID("")
-	l.Info("TEST_TEST")
-
-	strs := strings.Split(buf.String(), " ")
-
-	if strs[0] != "[samaritan.test" || strs[4] != "TEST_TEST\n" ||
-		strs[1] != "-" || strs[2] != "-]" {
-		t.Errorf("SyslogTpl Error: %s", buf.String())
-	}
-}
-
 func ExampleLogger() {
 	l := NewWithWriter("test", nil)
 	h, err := NewStreamHandler(os.Stdout, "{{level}} {{}}")
@@ -382,7 +342,7 @@ func initLockVisor() {
 	wSupervisor = newWriterSupervisor()
 }
 
-func BenchmarkLogNoAsync(b *testing.B) {
+func BenchmarkLogSync(b *testing.B) {
 	initLockVisor()
 	w, err := newEmptyWriter(b.N, 11)
 	if err != nil {
@@ -395,10 +355,10 @@ func BenchmarkLogNoAsync(b *testing.B) {
 	h.Colored(false)
 	l.AddHandler(h)
 
+	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
 		l.Info("TEST_TEST_TEST")
 	}
-	<-w.writed
 }
 
 func BenchmarkLogAsync(b *testing.B) {
@@ -415,12 +375,13 @@ func BenchmarkLogAsync(b *testing.B) {
 	l.AddHandler(h)
 	l.SetAsync(true)
 
+	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
 		l.Info("TEST_TEST_TEST")
 	}
 }
 
-func BenchmarkLogNoAsyncFiveHandler(b *testing.B) {
+func BenchmarkLogSync5Handlers(b *testing.B) {
 	initLockVisor()
 	var arr [5]*emptyWriter
 	var err error
@@ -439,16 +400,13 @@ func BenchmarkLogNoAsyncFiveHandler(b *testing.B) {
 		l.AddHandler(h)
 	}
 
+	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
 		l.Info("TEST_TEST_TEST")
 	}
-
-	for i := range arr {
-		<-arr[i].writed
-	}
 }
 
-func BenchmarkLogAsyncFiveHandler(b *testing.B) {
+func BenchmarkLogAsync5Handlers(b *testing.B) {
 	initLockVisor()
 	arr := make([]*emptyWriter, 5)
 	var err error
@@ -468,6 +426,7 @@ func BenchmarkLogAsyncFiveHandler(b *testing.B) {
 	}
 	l.SetAsync(true)
 
+	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
 		l.Info("TEST_TEST_TEST")
 	}
