@@ -1,4 +1,4 @@
-package handler
+package syslog
 
 import (
 	"io"
@@ -7,35 +7,35 @@ import (
 	"github.com/eleme/log"
 )
 
-// SyslogHandler can send log to syslog
-type SyslogHandler struct {
+// Handler can send log to syslog
+type Handler struct {
 	log.Formatter
 	w *syslog.Writer
 }
 
-// NewSyslogHandler creates a SyslogHandler with given syslog.Writer which
+// NewHandler creates a Handler with given syslog.Writer which
 // could be created by syslog.New, the log format as follows:
 //
 //	"[{{app_id}} {{rpc_id}} {{request_id}}] ## {{}}"
-func NewSyslogHandler(w *syslog.Writer) (*SyslogHandler, error) {
+func NewHandler(w *syslog.Writer) (*Handler, error) {
 	f := log.NewBaseFormatter(false)
 	if err := f.ParseFormat(log.TplSyslog); err != nil {
 		return nil, err
 	}
-	return NewSyslogHandlerWithFormat(w, f), nil
+	return NewHandlerWithFormat(w, f), nil
 }
 
-// NewSyslogHandlerWithFormat is just like NewSyslogHandler but with customized
+// NewHandlerWithFormat is just like NewHandler but with customized
 // format string
-func NewSyslogHandlerWithFormat(w *syslog.Writer, f log.Formatter) *SyslogHandler {
-	h := new(SyslogHandler)
+func NewHandlerWithFormat(w *syslog.Writer, f log.Formatter) *Handler {
+	h := new(Handler)
 	h.w = w
 	h.Formatter = f
 	return h
 }
 
 // Log prints the Record info syslog writer
-func (sh *SyslogHandler) Log(r log.Record) {
+func (sh *Handler) Log(r log.Record) {
 	b := string(sh.Formatter.Format(r))
 	switch r.Level() {
 	case log.DEBUG:
@@ -52,6 +52,6 @@ func (sh *SyslogHandler) Log(r log.Record) {
 }
 
 // Writer return the writer
-func (sh *SyslogHandler) Writer() io.Writer {
+func (sh *Handler) Writer() io.Writer {
 	return sh.w
 }
