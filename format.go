@@ -20,6 +20,7 @@ const (
 
 // Formatter represents a formatter of record.
 type Formatter interface {
+	ParseFormat(format string) error
 	Format(record Record) []byte
 	Colored() bool
 	SetColored(colored bool)
@@ -27,24 +28,32 @@ type Formatter interface {
 
 // BaseFormatter describes the format of outputting log
 type BaseFormatter struct {
-	colored bool
-	tpl     *template.Template
+	colored     bool
+	tpl         *template.Template
+	tagReplacer *strings.Replacer
+	tags        []string
+	funcMap     template.FuncMap
 }
 
-// NewBaseFormatter creates a BaseFormatter with given format string and whether to
-// color the output
-func NewBaseFormatter(format string, colored bool) (*BaseFormatter, error) {
-	fm := new(BaseFormatter)
-	fm.colored = colored
-	if err := fm.SetFormat(format); err != nil {
-		return nil, err
-	}
-	return fm, nil
+// NewBaseFormatter creates a BaseFormatter with given colored whether
+// to color the output
+func NewBaseFormatter(colored bool) *BaseFormatter {
+	f := new(BaseFormatter)
+	f.colored = colored
+	f.AddTags(defaultTags...)
+	f.initFuncMap()
+	return f
+}
+
+// AddTags add replacer oldnew tags in formatter.
+func (f *BaseFormatter) AddTags(tags ...string) {
+	f.tags = append(f.tags, tags...)
+	f.tagReplacer = strings.NewReplacer(f.tags...)
 }
 
 var rTagLong = regexp.MustCompile("{{ *([a-zA-Z]+) *}}")
 var tagShort = []byte("{{$1}}")
-var tagReplacer = strings.NewReplacer(
+var defaultTags = []string{
 	"{{}}", "{{.String}}",
 	"{{level}}", "{{level .}}",
 	"{{l}}", "{{l .}}",
@@ -56,9 +65,9 @@ var tagReplacer = strings.NewReplacer(
 	"{{file_line}}", "{{file_line .}}",
 
 	"{{app_id}}", "{{app_id .}}",
-)
+}
 
-// SetFormat set the format of outputting log
+// ParseFormat parse the format of outputting log
 //
 // The default format is "{{ level }} {{ date }} {{ time }} {{ name }} {{}}"
 //
@@ -74,17 +83,17 @@ var tagReplacer = strings.NewReplacer(
 //	{{ name }}      Logger name
 //	{{ pid }}       Current process ID
 //	{{ file_line }} Filename and line number in format "file.go:12"
-func (f *BaseFormatter) SetFormat(format string) error {
+func (f *BaseFormatter) ParseFormat(format string) error {
 	// {{ tag }} -> {{tag}}
 	format = string(rTagLong.ReplaceAll([]byte(format), tagShort))
 
-	format = tagReplacer.Replace(format)
+	format = f.tagReplacer.Replace(format)
 
 	if !strings.HasSuffix(format, "\n") {
 		format += "\n"
 	}
 
-	t, err := template.New("tpl").Funcs(f.funcMap()).Parse(format)
+	t, err := template.New("tpl").Funcs(f.funcMap).Parse(format)
 	if err != nil {
 		return err
 	}
@@ -100,7 +109,6 @@ func (f *BaseFormatter) Format(record Record) []byte {
 	var buf bytes.Buffer // TODO: use sync.Pool
 	f.tpl.Execute(&buf, record)
 	return buf.Bytes()
-
 }
 
 // Colored return is colored.
@@ -196,8 +204,8 @@ func (f *BaseFormatter) _fileLine(r Record) string {
 	return s
 }
 
-func (f *BaseFormatter) funcMap() template.FuncMap {
-	return template.FuncMap{
+func (f *BaseFormatter) initFuncMap() {
+	f.funcMap = template.FuncMap{
 		"date":      f._date,
 		"time":      f._time,
 		"datetime":  f._datetime,
@@ -207,6 +215,13 @@ func (f *BaseFormatter) funcMap() template.FuncMap {
 		"pid":       f._pid,
 		"file_line": f._fileLine,
 		"app_id":    f._appID,
+	}
+}
+
+// AddFuncMap used to add template.FuncMap in formater.
+func (f *BaseFormatter) AddFuncMap(funcMap template.FuncMap) {
+	for k, v := range funcMap {
+		f.funcMap[k] = v
 	}
 }
 

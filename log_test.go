@@ -22,8 +22,8 @@ func TestFileLine(t *testing.T) {
 	l.handlers = make(map[Handler]bool)
 	l.recordFactory = NewBaseRecordFactory()
 
-	f, err := NewBaseFormatter("{{level}} {{date}} {{time}} {{name}} {{file_line}} {{}}", false)
-	if err != nil {
+	f := NewBaseFormatter(false)
+	if err := f.ParseFormat("{{level}} {{date}} {{time}} {{name}} {{file_line}} {{}}"); err != nil {
 		t.Fatalf("NewStreamHandler Error:%v", err)
 	}
 	hdr := NewStreamHandler(buf, f)
@@ -41,12 +41,12 @@ func TestFileLine(t *testing.T) {
 
 func newLogger(t *testing.T, w io.Writer, f string) SimpleLogger {
 	l := NewWithWriter("test", nil)
-	format, err := NewBaseFormatter(f, false)
-	if err != nil {
+	formatter := NewBaseFormatter(false)
+	if err := formatter.ParseFormat(f); err != nil {
 		t.Error("error creating stream handler: ", err)
 		t.FailNow()
 	}
-	h := NewStreamHandler(w, format)
+	h := NewStreamHandler(w, formatter)
 
 	h.Colored(false)
 	l.AddHandler(h)
@@ -64,7 +64,8 @@ func TestAsync(t *testing.T) {
 		writed: make(chan bool, 10),
 		buf:    bytes.NewBuffer(make([]byte, 0)),
 	}
-	f, _ := NewBaseFormatter("{{}}", false)
+	f := NewBaseFormatter(false)
+	f.ParseFormat("{{}}")
 	h := NewStreamHandler(w1, f)
 	h.Colored(false)
 	l.AddHandler(h)
@@ -176,8 +177,8 @@ content: hi
 
 func ExampleLogger() {
 	l := NewWithWriter("test", nil)
-	f, err := NewBaseFormatter("{{level}} {{}}", false)
-	if err != nil {
+	f := NewBaseFormatter(false)
+	if err := f.ParseFormat("{{level}} {{}}"); err != nil {
 		fmt.Println("error creating stream handler: ", err)
 		return
 	}
@@ -200,8 +201,8 @@ func ExampleLevel() {
 	l := NewWithWriter("test", nil)
 	l.SetLevel(DEBUG)
 
-	f, err := NewBaseFormatter("{{level}} {{}}", false)
-	if err != nil {
+	f := NewBaseFormatter(false)
+	if err := f.ParseFormat("{{level}} {{}}"); err != nil {
 		fmt.Println("error creating stream handler: ", err)
 		return
 	}
@@ -321,7 +322,8 @@ func BenchmarkLogSync(b *testing.B) {
 	defer w.w.Close()
 
 	l := NewWithWriter("test", nil)
-	f, _ := NewBaseFormatter("{{}}", false)
+	f := NewBaseFormatter(false)
+	f.ParseFormat("{{}}")
 	h := NewStreamHandler(w, f)
 	h.Colored(false)
 	l.AddHandler(h)
@@ -341,7 +343,8 @@ func BenchmarkLogAsync(b *testing.B) {
 	defer w.w.Close()
 
 	l := NewWithWriter("test", nil)
-	f, _ := NewBaseFormatter("{{}}", false)
+	f := NewBaseFormatter(false)
+	f.ParseFormat("{{}}")
 	h := NewStreamHandler(w, f)
 	h.Colored(false)
 	l.AddHandler(h)
@@ -367,7 +370,8 @@ func BenchmarkLogSync5Handlers(b *testing.B) {
 
 	l := NewWithWriter("test", nil)
 	for _, w := range arr {
-		f, _ := NewBaseFormatter("{{}}", false)
+		f := NewBaseFormatter(false)
+		f.ParseFormat("{{}}")
 		h := NewStreamHandler(w, f)
 		h.Colored(false)
 		l.AddHandler(h)
@@ -393,7 +397,8 @@ func BenchmarkLogAsync5Handlers(b *testing.B) {
 
 	l := NewWithWriter("test", nil)
 	for _, w := range arr {
-		f, _ := NewBaseFormatter("{{}}", false)
+		f := NewBaseFormatter(false)
+		f.ParseFormat("{{}}")
 		h := NewStreamHandler(w, f)
 		h.Colored(false)
 		l.AddHandler(h)

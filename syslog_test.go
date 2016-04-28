@@ -9,18 +9,8 @@ import (
 func TestSyslogtpl(t *testing.T) {
 	buf := bytes.NewBuffer(make([]byte, 0, 100))
 
-	l := new(Logger)
-	l.name = "name"
-	l.lv = INFO
-	l.handlers = make(map[Handler]bool)
+	l := newELogger(t, buf, syslogTpl)
 
-	f, err := NewRPCFormatter(syslogTpl, false)
-	if err != nil {
-		t.Fatalf("NewStreamHandler Error:%v", err)
-	}
-	hdr := NewStreamHandler(buf, f)
-
-	l.AddHandler(hdr)
 	SetGlobalAppID("samaritan.test")
 	defer SetGlobalAppID("")
 	l.Info("TEST_TEST")

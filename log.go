@@ -85,7 +85,8 @@ func NewWithWriter(name string, w io.Writer) *Logger {
 	l.lv = NOTSET
 	l.handlers = make(map[Handler]bool)
 	if w != nil {
-		f, err := NewBaseFormatter(defaultTpl, IsTerminal(w))
+		f := NewBaseFormatter(IsTerminal(w))
+		err := f.ParseFormat(defaultTpl)
 		if err != nil {
 			panic(err)
 		}
@@ -209,7 +210,11 @@ func (l *Logger) output(record Record) {
 	l.RLock()
 	if l.async {
 		for h := range l.handlers {
-			go h.Log(record)
+			// for loop variable bug
+			hh := h
+			wSupervisor.Do(h.Writer(), func() {
+				hh.Log(record)
+			})
 		}
 		l.RUnlock()
 		return

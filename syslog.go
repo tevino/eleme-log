@@ -13,8 +13,8 @@ type SyslogHandler struct {
 //
 //	"[{{app_id}} {{rpc_id}} {{request_id}}] ## {{}}"
 func NewSyslogHandler(w *syslog.Writer) (*SyslogHandler, error) {
-	f, err := NewRPCFormatter(syslogTpl, false)
-	if err != nil {
+	f := NewBaseFormatter(false)
+	if err := f.ParseFormat(syslogTpl); err != nil {
 		return nil, err
 	}
 	return NewSyslogHandlerWithFormat(w, f), nil
