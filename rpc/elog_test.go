@@ -1,4 +1,4 @@
-package log
+package rpc
 
 import (
 	"bytes"
@@ -7,10 +7,12 @@ import (
 	"strings"
 	"sync"
 	"testing"
+
+	"github.com/eleme/log"
 )
 
-func newELogger(t *testing.T, w io.Writer, f string) RPCLogger {
-	l := NewWithWriter("elog", nil)
+func newELogger(t *testing.T, w io.Writer, f string) log.RPCLogger {
+	l := log.NewWithWriter("elog", nil)
 	elog := &ELogger{Logger: l}
 	elog.recordFactory = NewELogRecordFactory(elog.rpcID, elog.requestID)
 
@@ -19,7 +21,7 @@ func newELogger(t *testing.T, w io.Writer, f string) RPCLogger {
 		t.Error("error creating stream handler: ", err)
 		t.FailNow()
 	}
-	h := NewStreamHandler(w, ef)
+	h := log.NewStreamHandler(w, ef)
 	h.Colored(false)
 	elog.AddHandler(h)
 	return elog

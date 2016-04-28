@@ -1,7 +1,9 @@
-package log
+package rpc
 
 import (
 	"text/template"
+
+	"github.com/eleme/log"
 )
 
 var elogTags = []string{
@@ -11,14 +13,14 @@ var elogTags = []string{
 
 // ELogForamtter is the formatter for elog.
 type ELogForamtter struct {
-	*BaseFormatter
+	*log.BaseFormatter
 }
 
 // NewELogFormatter create a ELogFormatter with colored.
 func NewELogFormatter(colored bool) *ELogForamtter {
 	ef := new(ELogForamtter)
-	ef.BaseFormatter = NewBaseFormatter(colored)
-	ef.colored = colored
+	ef.BaseFormatter = log.NewBaseFormatter(colored)
+	ef.SetColored(colored)
 	ef.AddTags(elogTags...)
 	ef.AddFuncMap(template.FuncMap{
 		"rpc_id":     ef._rpcID,
@@ -28,7 +30,7 @@ func NewELogFormatter(colored bool) *ELogForamtter {
 }
 
 // Format formats a Record with set format
-func (f *ELogForamtter) Format(record Record) []byte {
+func (f *ELogForamtter) Format(record log.Record) []byte {
 	return f.BaseFormatter.Format(record)
 }
 
@@ -38,7 +40,7 @@ func (f *ELogForamtter) _rpcID(r *ELogRecord) string {
 		s = "-"
 	}
 	if f.Colored() {
-		s = f.paint(r.lv, s)
+		s = f.Paint(r.Level(), s)
 	}
 	return s
 }
@@ -49,7 +51,7 @@ func (f *ELogForamtter) _requestID(r *ELogRecord) string {
 		s = "-"
 	}
 	if f.Colored() {
-		s = f.paint(r.lv, s)
+		s = f.Paint(r.Level(), s)
 	}
 	return s
 }
