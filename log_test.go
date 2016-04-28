@@ -20,31 +20,36 @@ func TestFileLine(t *testing.T) {
 	l.name = "name"
 	l.lv = INFO
 	l.handlers = make(map[Handler]bool)
+	l.recordFactory = NewBaseRecordFactory()
 
-	hdr, err := NewStreamHandler(buf, "{{level}} {{date}} {{time}} {{name}} {{file_line}} {{}}")
-	if err != nil {
+	f := NewBaseFormatter(false)
+	if err := f.ParseFormat("{{level}} {{date}} {{time}} {{name}} {{file_line}} {{}}"); err != nil {
 		t.Fatalf("NewStreamHandler Error:%v", err)
 	}
+	hdr := NewStreamHandler(buf, f)
+
 	l.AddHandler(hdr)
 	SetGlobalAppID("samaritan.test")
 	defer SetGlobalAppID("")
 	l.Info("TEST_TEST")
 
 	strs := strings.Split(buf.String(), " ")
-	if strs[4] != "log_test.go:31" {
+	if strs[4] != "log_test.go:34" {
 		t.Errorf("FileLine Error: %s", buf.String())
 	}
 }
 
 func newLogger(t *testing.T, w io.Writer, f string) SimpleLogger {
 	l := NewWithWriter("test", nil)
-	h, err := NewStreamHandler(w, f)
-	h.Colored(false)
-	l.AddHandler(h)
-	if err != nil {
+	formatter := NewBaseFormatter(false)
+	if err := formatter.ParseFormat(f); err != nil {
 		t.Error("error creating stream handler: ", err)
 		t.FailNow()
 	}
+	h := NewStreamHandler(w, formatter)
+
+	h.Colored(false)
+	l.AddHandler(h)
 	return l
 }
 
@@ -59,7 +64,9 @@ func TestAsync(t *testing.T) {
 		writed: make(chan bool, 10),
 		buf:    bytes.NewBuffer(make([]byte, 0)),
 	}
-	h, _ := NewStreamHandler(w1, "{{}}")
+	f := NewBaseFormatter(false)
+	f.ParseFormat("{{}}")
+	h := NewStreamHandler(w1, f)
 	h.Colored(false)
 	l.AddHandler(h)
 
@@ -153,46 +160,6 @@ func TestGlobalAppID(t *testing.T) {
 	}
 }
 
-func TestSetRPCID(t *testing.T) {
-	var buf bytes.Buffer
-	l := newLogger(t, &buf, "[{{rpc_id}}] ## {{}}")
-	rpcLog := l.(RPCLogger)
-
-	expectedNil := "[-] ## InfoLog\n"
-	rpcLog.Info("InfoLog")
-	if buf.String() != expectedNil {
-		t.Errorf("Expected:\n%s\nGot:\n%s", expectedNil, buf.String())
-	}
-
-	buf.Reset()
-	expected := "[test.rpcid] ## InfoLog\n"
-	rpcLog.SetRPCID("test.rpcid")
-	rpcLog.Info("InfoLog")
-	if buf.String() != expected {
-		t.Errorf("Expected:\n%s\nGot:\n%s", expected, buf.String())
-	}
-}
-
-func TestSetRequestID(t *testing.T) {
-	var buf bytes.Buffer
-	l := newLogger(t, &buf, "[{{request_id}}] ## {{}}")
-	rpcLog := l.(RPCLogger)
-
-	expectedNil := "[-] ## InfoLog\n"
-	rpcLog.Info("InfoLog")
-	if buf.String() != expectedNil {
-		t.Errorf("Expected:\n%s\nGot:\n%s", expectedNil, buf.String())
-	}
-
-	buf.Reset()
-	expected := "[test.request_id] ## InfoLog\n"
-	rpcLog.SetRequestID("test.request_id")
-	rpcLog.Info("InfoLog")
-	if buf.String() != expected {
-		t.Errorf("Expected:\n%s\nGot:\n%s", expected, buf.String())
-	}
-}
-
 func TestTemplate(t *testing.T) {
 	expected := `long: INFO
 short: I
@@ -210,11 +177,13 @@ content: hi
 
 func ExampleLogger() {
 	l := NewWithWriter("test", nil)
-	h, err := NewStreamHandler(os.Stdout, "{{level}} {{}}")
-	if err != nil {
+	f := NewBaseFormatter(false)
+	if err := f.ParseFormat("{{level}} {{}}"); err != nil {
 		fmt.Println("error creating stream handler: ", err)
 		return
 	}
+	h := NewStreamHandler(os.Stdout, f)
+
 	h.Colored(false)
 	l.AddHandler(h)
 
@@ -231,11 +200,13 @@ func ExampleLogger() {
 func ExampleLevel() {
 	l := NewWithWriter("test", nil)
 	l.SetLevel(DEBUG)
-	h, err := NewStreamHandler(os.Stdout, "{{level}} {{}}")
-	if err != nil {
+
+	f := NewBaseFormatter(false)
+	if err := f.ParseFormat("{{level}} {{}}"); err != nil {
 		fmt.Println("error creating stream handler: ", err)
 		return
 	}
+	h := NewStreamHandler(os.Stdout, f)
 	h.Colored(false)
 	l.AddHandler(h)
 	l.Debug("Debug, turned off by default")
@@ -271,12 +242,12 @@ func BenchmarkDateM(b *testing.B) {
 
 func BenchmarkDate(b *testing.B) {
 	hdr := defaultLogger.Handlers()[0].(*StreamHandler)
-	r := &Record{
+	r := &BaseRecord{
 		now: time.Now(),
 	}
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		hdr._date(r)
+		hdr.Formatter.(*BaseFormatter)._date(r)
 	}
 }
 
@@ -290,12 +261,12 @@ func BenchmarkTimeM(b *testing.B) {
 
 func BenchmarkTime(b *testing.B) {
 	hdr := defaultLogger.Handlers()[0].(*StreamHandler)
-	r := &Record{
+	r := &BaseRecord{
 		now: time.Now(),
 	}
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		hdr._time(r)
+		hdr.Formatter.(*BaseFormatter)._time(r)
 	}
 }
 
@@ -351,7 +322,9 @@ func BenchmarkLogSync(b *testing.B) {
 	defer w.w.Close()
 
 	l := NewWithWriter("test", nil)
-	h, _ := NewStreamHandler(w, "{{}}")
+	f := NewBaseFormatter(false)
+	f.ParseFormat("{{}}")
+	h := NewStreamHandler(w, f)
 	h.Colored(false)
 	l.AddHandler(h)
 
@@ -370,7 +343,9 @@ func BenchmarkLogAsync(b *testing.B) {
 	defer w.w.Close()
 
 	l := NewWithWriter("test", nil)
-	h, _ := NewStreamHandler(w, "{{}}")
+	f := NewBaseFormatter(false)
+	f.ParseFormat("{{}}")
+	h := NewStreamHandler(w, f)
 	h.Colored(false)
 	l.AddHandler(h)
 	l.SetAsync(true)
@@ -395,7 +370,9 @@ func BenchmarkLogSync5Handlers(b *testing.B) {
 
 	l := NewWithWriter("test", nil)
 	for _, w := range arr {
-		h, _ := NewStreamHandler(w, "{{}}")
+		f := NewBaseFormatter(false)
+		f.ParseFormat("{{}}")
+		h := NewStreamHandler(w, f)
 		h.Colored(false)
 		l.AddHandler(h)
 	}
@@ -420,7 +397,9 @@ func BenchmarkLogAsync5Handlers(b *testing.B) {
 
 	l := NewWithWriter("test", nil)
 	for _, w := range arr {
-		h, _ := NewStreamHandler(w, "{{}}")
+		f := NewBaseFormatter(false)
+		f.ParseFormat("{{}}")
+		h := NewStreamHandler(w, f)
 		h.Colored(false)
 		l.AddHandler(h)
 	}

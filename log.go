@@ -6,12 +6,9 @@ import (
 	"fmt"
 	"io"
 	"os"
-	"runtime"
-	"strconv"
 	"strings"
 	"sync"
 	"text/template"
-	"time"
 )
 
 // LevelType identifies the level of a logger
@@ -67,18 +64,17 @@ var levelFlag = map[string]LevelType{
 // name, level, logging format, and multiple handlers
 type Logger struct {
 	sync.RWMutex
-	wg        sync.WaitGroup
-	name      string
-	lv        LevelType
-	tpl       *template.Template
-	handlers  map[Handler]bool
-	rpcID     string
-	requestID string
-	async     bool
+	wg            sync.WaitGroup
+	name          string
+	lv            LevelType
+	tpl           *template.Template
+	handlers      map[Handler]bool
+	async         bool
+	recordFactory RecordFactory
 }
 
 // New creates a Logger with Stdout as default output
-func New(name string) *Logger {
+func New(name string) SimpleLogger {
 	return NewWithWriter(name, os.Stdout)
 }
 
@@ -89,19 +85,16 @@ func NewWithWriter(name string, w io.Writer) *Logger {
 	l.lv = NOTSET
 	l.handlers = make(map[Handler]bool)
 	if w != nil {
-		hdr, err := NewStreamHandler(w, defaultTpl)
+		f := NewBaseFormatter(IsTerminal(w))
+		err := f.ParseFormat(defaultTpl)
 		if err != nil {
 			panic(err)
 		}
+		hdr := NewStreamHandler(w, f)
 		l.AddHandler(hdr)
 	}
+	l.recordFactory = NewBaseRecordFactory()
 	return l
-}
-
-// NewRPCLogger creates a Logger with given name as a RPCLogger
-func NewRPCLogger(name string) RPCLogger {
-	// TODO: differentiate RPCLogger and Logger
-	return New(name)
 }
 
 // SetGlobalLevel sets the global log level
@@ -203,34 +196,6 @@ func (l *Logger) SetLevel(lv LevelType) {
 	l.lv = lv
 }
 
-// SetRPCID sets the RPCID for logger
-func (l *Logger) SetRPCID(rpcID string) {
-	l.Lock()
-	defer l.Unlock()
-	l.rpcID = rpcID
-}
-
-// RPCID returns the RPCID of logger
-func (l *Logger) RPCID() string {
-	l.RLock()
-	defer l.RUnlock()
-	return l.rpcID
-}
-
-// SetRequestID sets the RequestID for logger
-func (l *Logger) SetRequestID(requestID string) {
-	l.Lock()
-	defer l.Unlock()
-	l.requestID = requestID
-}
-
-// RequestID returns the request ID of logger
-func (l *Logger) RequestID() string {
-	l.RLock()
-	defer l.RUnlock()
-	return l.requestID
-}
-
 // SetAsync set output as async
 func (l *Logger) SetAsync(async bool) {
 	l.Lock()
@@ -238,39 +203,17 @@ func (l *Logger) SetAsync(async bool) {
 	l.async = async
 }
 
-// Output writes a log to all writers with given calldepth and level
+// output writes a log to all writers with given record.
 //
 // Normally, you won't need this.
-func (l *Logger) Output(calldepth int, lv LevelType, s string) {
-	if lv < l.Level() {
-		return
-	}
-	fileLine := ""
-	_, file, line, ok := runtime.Caller(calldepth)
-	if !ok {
-		file = "???"
-		line = 0
-	}
-	fileLine = file + ":" + strconv.Itoa(line)
-
+func (l *Logger) output(record Record) {
 	l.RLock()
-	r := &Record{
-		fileLine:  fileLine,
-		name:      l.name,
-		now:       time.Now(),
-		lv:        lv,
-		msg:       s,
-		rpcID:     l.rpcID,
-		requestID: l.requestID,
-		appID:     globalAppID,
-	}
-
 	if l.async {
 		for h := range l.handlers {
 			// for loop variable bug
 			hh := h
 			wSupervisor.Do(h.Writer(), func() {
-				hh.Log(r)
+				hh.Log(record)
 			})
 		}
 		l.RUnlock()
@@ -280,10 +223,10 @@ func (l *Logger) Output(calldepth int, lv LevelType, s string) {
 	var wg sync.WaitGroup
 	for h := range l.handlers {
 		wg.Add(1)
-		go func(h Handler, r *Record) {
+		go func(h Handler, record Record) {
 			defer wg.Done()
-			h.Log(r)
-		}(h, r)
+			h.Log(record)
+		}(h, record)
 	}
 	l.RUnlock()
 	wg.Wait()
@@ -293,77 +236,107 @@ func (l *Logger) Output(calldepth int, lv LevelType, s string) {
 
 // Debug calls Output to log with DEBUG level
 func (l *Logger) Debug(a ...interface{}) {
-	l.Output(2, DEBUG, fmt.Sprint(a...))
+	if DEBUG < l.Level() {
+		return
+	}
+	l.output(l.recordFactory(l.Name(), 2, DEBUG, fmt.Sprint(a...)))
 }
 
 // Debugf calls Output to log with DEBUG level and given format
 func (l *Logger) Debugf(format string, a ...interface{}) {
-	l.Output(2, DEBUG, fmt.Sprintf(format, a...))
+	if DEBUG < l.Level() {
+		return
+	}
+	l.output(l.recordFactory(l.Name(), 2, DEBUG, fmt.Sprintf(format, a...)))
 }
 
 // Print APIs
 
 // Print calls Output to log with default level
 func (l *Logger) Print(a ...interface{}) {
-	l.Output(2, l.Level(), fmt.Sprint(a...))
+	l.output(l.recordFactory(l.Name(), 2, l.Level(), fmt.Sprint(a...)))
 }
 
 // Println calls Output to log with default level
 func (l *Logger) Println(a ...interface{}) {
-	l.Output(2, l.Level(), fmt.Sprint(a...))
+	l.output(l.recordFactory(l.Name(), 2, l.Level(), fmt.Sprint(a...)))
 }
 
 // Printf calls Output to log with default level and given format
 func (l *Logger) Printf(f string, a ...interface{}) {
-	l.Output(2, l.Level(), fmt.Sprintf(f, a...))
+	l.output(l.recordFactory(l.Name(), 2, l.Level(), fmt.Sprintf(f, a...)))
 }
 
 // Info APIs
 
 // Info calls Output to log with INFO level
 func (l *Logger) Info(a ...interface{}) {
-	l.Output(2, INFO, fmt.Sprint(a...))
+	if INFO < l.Level() {
+		return
+	}
+	l.output(l.recordFactory(l.Name(), 2, INFO, fmt.Sprint(a...)))
 }
 
 // Infof calls Output to log with INFO level and given format
 func (l *Logger) Infof(f string, a ...interface{}) {
-	l.Output(2, INFO, fmt.Sprintf(f, a...))
+	if INFO < l.Level() {
+		return
+	}
+	l.output(l.recordFactory(l.Name(), 2, INFO, fmt.Sprintf(f, a...)))
 }
 
 // Warn APIs
 
 // Warn calls Output to log with WARN level
 func (l *Logger) Warn(a ...interface{}) {
-	l.Output(2, WARN, fmt.Sprint(a...))
+	if WARN < l.Level() {
+		return
+	}
+	l.output(l.recordFactory(l.Name(), 2, WARN, fmt.Sprint(a...)))
 }
 
 // Warnf calls Output to log with WARN level and given format
 func (l *Logger) Warnf(f string, a ...interface{}) {
-	l.Output(2, WARN, fmt.Sprintf(f, a...))
+	if WARN < l.Level() {
+		return
+	}
+	l.output(l.recordFactory(l.Name(), 2, WARN, fmt.Sprintf(f, a...)))
 }
 
 // Error APIs
 
 // Error calls Output to log with ERRO level
 func (l *Logger) Error(a ...interface{}) {
-	l.Output(2, ERRO, fmt.Sprint(a...))
+	if ERRO < l.Level() {
+		return
+	}
+	l.output(l.recordFactory(l.Name(), 2, ERRO, fmt.Sprint(a...)))
 }
 
 // Errorf calls Output to log with ERRO level and given format
 func (l *Logger) Errorf(f string, a ...interface{}) {
-	l.Output(2, ERRO, fmt.Sprintf(f, a...))
+	if ERRO < l.Level() {
+		return
+	}
+	l.output(l.recordFactory(l.Name(), 2, ERRO, fmt.Sprintf(f, a...)))
 }
 
 // Fatal APIs
 
 // Fatal calls Output to log with FATA level followed by a call to os.Exit(1)
 func (l *Logger) Fatal(a ...interface{}) {
-	l.Output(2, FATA, fmt.Sprint(a...))
+	if FATA < l.Level() {
+		return
+	}
+	l.output(l.recordFactory(l.Name(), 2, FATA, fmt.Sprint(a...)))
 	os.Exit(1)
 }
 
 // Fatalf calls Output to log with FATA level with given format, followed by a call to os.Exit(1)
 func (l *Logger) Fatalf(f string, a ...interface{}) {
-	l.Output(2, FATA, fmt.Sprintf(f, a...))
+	if FATA < l.Level() {
+		return
+	}
+	l.output(l.recordFactory(l.Name(), 2, FATA, fmt.Sprintf(f, a...)))
 	os.Exit(1)
 }

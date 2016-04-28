@@ -29,7 +29,9 @@ func TestMultiHandler(t *testing.T) {
 	l.RemoveHandler(h)
 	ast.Equal(len(l.Handlers()), 0)
 
-	sHdr, _ := NewStreamHandler(os.Stdin, "{{level}} {{date}} {{time}} {{name}} {{file_line}} {{}}")
+	f := NewBaseFormatter(false)
+	f.ParseFormat("{{level}} {{date}} {{time}} {{name}} {{file_line}} {{}}")
+	sHdr := NewStreamHandler(os.Stdin, f)
 	l.AddHandler(sHdr)
 
 	ast.Equal(len(l.Handlers()), 1)

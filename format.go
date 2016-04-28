@@ -9,26 +9,51 @@ import (
 	"text/template"
 )
 
-// Formatter describes the format of outputting log
-type Formatter struct {
-	colored bool
-	tpl     *template.Template
+const (
+	// LDate is the layout of date
+	LDate = "2006-01-02"
+	// LTime is the laytou of time
+	LTime = "15:04:05"
+	// LDatetime is the layout of datetime
+	LDatetime = LDate + " " + LTime + ".999"
+)
+
+// Formatter represents a formatter of record.
+type Formatter interface {
+	ParseFormat(format string) error
+	Format(record Record) []byte
+	Colored() bool
+	SetColored(colored bool)
 }
 
-// NewFormatter creates a Formatter with given format string and whether to
-// color the output
-func NewFormatter(format string, colored bool) (*Formatter, error) {
-	fm := new(Formatter)
-	fm.colored = colored
-	if err := fm.SetFormat(format); err != nil {
-		return nil, err
-	}
-	return fm, nil
+// BaseFormatter describes the format of outputting log
+type BaseFormatter struct {
+	colored     bool
+	tpl         *template.Template
+	tagReplacer *strings.Replacer
+	tags        []string
+	funcMap     template.FuncMap
+}
+
+// NewBaseFormatter creates a BaseFormatter with given colored whether
+// to color the output
+func NewBaseFormatter(colored bool) *BaseFormatter {
+	f := new(BaseFormatter)
+	f.colored = colored
+	f.AddTags(defaultTags...)
+	f.initFuncMap()
+	return f
+}
+
+// AddTags add replacer oldnew tags in formatter.
+func (f *BaseFormatter) AddTags(tags ...string) {
+	f.tags = append(f.tags, tags...)
+	f.tagReplacer = strings.NewReplacer(f.tags...)
 }
 
 var rTagLong = regexp.MustCompile("{{ *([a-zA-Z]+) *}}")
 var tagShort = []byte("{{$1}}")
-var tagReplacer = strings.NewReplacer(
+var defaultTags = []string{
 	"{{}}", "{{.String}}",
 	"{{level}}", "{{level .}}",
 	"{{l}}", "{{l .}}",
@@ -39,12 +64,10 @@ var tagReplacer = strings.NewReplacer(
 	"{{pid}}", "{{pid .}}",
 	"{{file_line}}", "{{file_line .}}",
 
-	"{{rpc_id}}", "{{rpc_id .}}",
-	"{{request_id}}", "{{request_id .}}",
 	"{{app_id}}", "{{app_id .}}",
-)
+}
 
-// SetFormat set the format of outputting log
+// ParseFormat parse the format of outputting log
 //
 // The default format is "{{ level }} {{ date }} {{ time }} {{ name }} {{}}"
 //
@@ -60,17 +83,17 @@ var tagReplacer = strings.NewReplacer(
 //	{{ name }}      Logger name
 //	{{ pid }}       Current process ID
 //	{{ file_line }} Filename and line number in format "file.go:12"
-func (f *Formatter) SetFormat(tpl string) error {
+func (f *BaseFormatter) ParseFormat(format string) error {
 	// {{ tag }} -> {{tag}}
-	tpl = string(rTagLong.ReplaceAll([]byte(tpl), tagShort))
+	format = string(rTagLong.ReplaceAll([]byte(format), tagShort))
 
-	tpl = tagReplacer.Replace(tpl)
+	format = f.tagReplacer.Replace(format)
 
-	if !strings.HasSuffix(tpl, "\n") {
-		tpl += "\n"
+	if !strings.HasSuffix(format, "\n") {
+		format += "\n"
 	}
 
-	t, err := template.New("tpl").Funcs(f.funcMap()).Parse(tpl)
+	t, err := template.New("tpl").Funcs(f.funcMap).Parse(format)
 	if err != nil {
 		return err
 	}
@@ -82,105 +105,93 @@ func (f *Formatter) SetFormat(tpl string) error {
 }
 
 // Format formats a Record with set format
-func (f *Formatter) Format(r *Record) []byte {
+func (f *BaseFormatter) Format(record Record) []byte {
 	var buf bytes.Buffer // TODO: use sync.Pool
-	f.tpl.Execute(&buf, r)
+	f.tpl.Execute(&buf, record)
 	return buf.Bytes()
+}
+
+// Colored return is colored.
+func (f *BaseFormatter) Colored() bool {
+	return f.colored
+}
+
+// SetColored set the value of colored.
+func (f *BaseFormatter) SetColored(colored bool) {
+	f.colored = colored
 }
 
 // TODO: the 'if color then paint' is ugly!!
 
-func (f *Formatter) _level(r *Record) string {
-	s := LevelName[r.lv]
+func (f *BaseFormatter) _level(r Record) string {
+	s := LevelName[r.Level()]
 	if f.colored {
-		s = f.paint(r.lv, s)
+		s = f.paint(r.Level(), s)
 	}
 	return s
 }
 
-func (f *Formatter) _l(r *Record) string {
-	s := LevelName[r.lv][0:1]
+func (f *BaseFormatter) _l(r Record) string {
+	s := LevelName[r.Level()][0:1]
 	if f.colored {
-		s = f.paint(r.lv, s)
+		s = f.paint(r.Level(), s)
 	}
 	return s
 }
 
-func (f *Formatter) _datetime(r *Record) string {
-	s := r.now.Format("2006-01-02 15:04:05.999")
+func (f *BaseFormatter) _datetime(r Record) string {
+	s := r.Now().Format(LDatetime)
 	if f.colored {
-		s = f.paint(r.lv, s)
+		s = f.paint(r.Level(), s)
 	}
 	return s
 }
 
-func (f *Formatter) _date(r *Record) string {
-	s := r.now.Format("2006-01-02")
+func (f *BaseFormatter) _date(r Record) string {
+	s := r.Now().Format(LDate)
 	if f.colored {
-		s = f.paint(r.lv, s)
+		s = f.paint(r.Level(), s)
 	}
 	return s
 }
 
-func (f *Formatter) _time(r *Record) string {
-	s := r.now.Format("15:04:05")
+func (f *BaseFormatter) _time(r Record) string {
+	s := r.Now().Format(LTime)
 	if f.colored {
-		s = f.paint(r.lv, s)
+		s = f.paint(r.Level(), s)
 	}
 	return s
 }
 
-func (f *Formatter) _name(r *Record) string {
-	s := r.name
+func (f *BaseFormatter) _name(r Record) string {
+	s := r.Name()
 	if f.colored {
-		s = f.paint(r.lv, s)
+		s = f.paint(r.Level(), s)
 	}
 	return s
 }
 
-func (f *Formatter) _pid(r *Record) string {
+func (f *BaseFormatter) _pid(r Record) string {
 	s := strconv.Itoa(os.Getpid())
 	if f.colored {
-		s = f.paint(r.lv, s)
+		s = f.paint(r.Level(), s)
 	}
 	return s
 }
 
-func (f *Formatter) _rpcID(r *Record) string {
-	s := r.rpcID
+func (f *BaseFormatter) _appID(r Record) string {
+	s := r.AppID()
 	if s == "" {
 		s = "-"
 	}
 	if f.colored {
-		s = f.paint(r.lv, s)
+		s = f.paint(r.Level(), s)
 	}
 	return s
 }
 
-func (f *Formatter) _requestID(r *Record) string {
-	s := r.requestID
-	if s == "" {
-		s = "-"
-	}
-	if f.colored {
-		s = f.paint(r.lv, s)
-	}
-	return s
-}
-
-func (f *Formatter) _appID(r *Record) string {
-	s := r.appID
-	if s == "" {
-		s = "-"
-	}
-	if f.colored {
-		s = f.paint(r.lv, s)
-	}
-	return s
-}
-
-func (f *Formatter) _fileLine(r *Record) string {
-	s := r.fileLine
+func (f *BaseFormatter) _fileLine(r Record) string {
+	s := r.Fileline()
 	for i := len(s) - 1; i >= 0; i-- {
 		if s[i] == '/' {
 			s = s[i+1:]
@@ -188,13 +199,13 @@ func (f *Formatter) _fileLine(r *Record) string {
 		}
 	}
 	if f.colored {
-		s = f.paint(r.lv, s)
+		s = f.paint(r.Level(), s)
 	}
 	return s
 }
 
-func (f *Formatter) funcMap() template.FuncMap {
-	return template.FuncMap{
+func (f *BaseFormatter) initFuncMap() {
+	f.funcMap = template.FuncMap{
 		"date":      f._date,
 		"time":      f._time,
 		"datetime":  f._datetime,
@@ -203,13 +214,17 @@ func (f *Formatter) funcMap() template.FuncMap {
 		"name":      f._name,
 		"pid":       f._pid,
 		"file_line": f._fileLine,
-
-		"rpc_id":     f._rpcID,
-		"request_id": f._requestID,
-		"app_id":     f._appID,
+		"app_id":    f._appID,
 	}
 }
 
-func (f *Formatter) paint(lv LevelType, s string) string {
+// AddFuncMap used to add template.FuncMap in formater.
+func (f *BaseFormatter) AddFuncMap(funcMap template.FuncMap) {
+	for k, v := range funcMap {
+		f.funcMap[k] = v
+	}
+}
+
+func (f *BaseFormatter) paint(lv LevelType, s string) string {
 	return painter(levelColor[lv], s)
 }
