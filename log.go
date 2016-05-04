@@ -166,6 +166,13 @@ func (l *Logger) RemoveHandler(h Handler) {
 	delete(l.handlers, h)
 }
 
+// SetRecordFactory set the recordFactory of Logger.
+func (l *Logger) SetRecordFactory(recordFactory RecordFactory) {
+	l.Lock()
+	defer l.Unlock()
+	l.recordFactory = recordFactory
+}
+
 // Level returns the current level of logger
 //
 // logger.SetLevel is always authoritative, GlobalLevel is used if SetLevel is

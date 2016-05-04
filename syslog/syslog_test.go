@@ -12,20 +12,23 @@ import (
 func TestSyslogtpl(t *testing.T) {
 	buf := bytes.NewBuffer(make([]byte, 0, 100))
 
-	elog := rpc.NewELogger("elog")
+	l := log.NewWithWriter("name", nil)
 
-	ef := rpc.NewELogFormatter(false)
-	if err := ef.ParseFormat(log.TplSyslog); err != nil {
-		t.Error("error creating stream handler: ", err)
-		t.FailNow()
+	f := rpc.NewELogFormatter(false)
+	if err := f.ParseFormat(log.TplSyslog); err != nil {
+		t.Error(err)
+		return
 	}
-	h := log.NewStreamHandler(buf, ef)
-	h.Colored(false)
-	elog.AddHandler(h)
+
+	hdr := log.NewStreamHandler(buf, f)
+	l.AddHandler(hdr)
+
+	recordFactory := rpc.NewELogRecordFactory("", "")
+	l.SetRecordFactory(recordFactory)
 
 	log.SetGlobalAppID("samaritan.test")
 	defer log.SetGlobalAppID("")
-	elog.Info("TEST_TEST")
+	l.Info("TEST_TEST")
 
 	strs := strings.Split(buf.String(), " ")
 
