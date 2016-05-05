@@ -227,6 +227,10 @@ func (l *Logger) Output(record Record) {
 		return
 	}
 
+	if record.Level() == FATA {
+		wSupervisor.WaitClose()
+	}
+
 	var wg sync.WaitGroup
 	for h := range l.handlers {
 		wg.Add(1)

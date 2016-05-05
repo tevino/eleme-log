@@ -1,6 +1,9 @@
 package log
 
-import "bytes"
+import (
+	"bytes"
+	"sync"
+)
 
 type fakeWriter struct {
 	writed chan bool
@@ -15,4 +18,17 @@ func (f *fakeWriter) Write(p []byte) (n int, err error) {
 
 func (f *fakeWriter) String() string {
 	return f.buf.String()
+}
+
+type appendWriter struct {
+	lines []string
+	l     *sync.Mutex
+}
+
+func (w *appendWriter) Write(p []byte) (n int, err error) {
+	w.l.Lock()
+	w.lines = append(w.lines, string(p))
+	w.l.Unlock()
+
+	return len(p), nil
 }
