@@ -10,6 +10,11 @@ func init() {
 	wSupervisor = newWriterSupervisor()
 }
 
+//Wait wait for all writer worker close
+func Wait() {
+	wSupervisor.WaitClose()
+}
+
 // Handler represents a handler of Record
 type Handler interface {
 	Log(record Record)

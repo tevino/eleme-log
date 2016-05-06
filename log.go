@@ -215,7 +215,7 @@ func (l *Logger) SetAsync(async bool) {
 // Normally, you won't need this.
 func (l *Logger) Output(record Record) {
 	l.RLock()
-	if l.async {
+	if l.async && record.Level() != FATA {
 		for h := range l.handlers {
 			// for loop variable bug
 			hh := h
@@ -225,6 +225,10 @@ func (l *Logger) Output(record Record) {
 		}
 		l.RUnlock()
 		return
+	}
+
+	if record.Level() == FATA {
+		wSupervisor.WaitClose()
 	}
 
 	var wg sync.WaitGroup

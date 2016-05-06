@@ -94,6 +94,35 @@ outer:
 	}
 }
 
+func TestAsyncFATA(t *testing.T) {
+	w := &appendWriter{
+		l: &sync.Mutex{},
+	}
+
+	l := newLogger(t, w, "{{}}")
+	l.SetAsync(true)
+	realLogger := l.(*Logger)
+
+	expected := "Last_Fatal_Async\n"
+	fataRecord := realLogger.recordFactory(realLogger.Name(), 2, FATA, "Last_Fatal_Async")
+
+	max := 2000
+
+	for i := 0; i < max; i++ {
+		realLogger.Info("Test_Async")
+	}
+	realLogger.Output(fataRecord)
+	for i := 0; i < 20; i++ {
+		realLogger.Info("Test_Async")
+	}
+
+	if len(w.lines) != max+1 {
+		t.Errorf("Writed log lines not Match, whant=%d got=%d", max+1, len(w.lines))
+	} else if w.lines[max] != expected {
+		t.Errorf("Fatal Log not Match,\n want=%s got=%s", expected, w.lines[max])
+	}
+}
+
 func TestGlobalLevel(t *testing.T) {
 	expected := "W: WarnLog\n"
 	var b bytes.Buffer
