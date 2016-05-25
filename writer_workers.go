@@ -3,6 +3,8 @@ package log
 import (
 	"io"
 	"sync"
+
+	"github.com/tevino/abool"
 )
 
 const (
@@ -12,14 +14,11 @@ const (
 type writerWorker struct {
 	ch      chan func()
 	closing chan bool
-	closed  bool
-	l       sync.RWMutex
+	closed  *abool.AtomicBool
 }
 
 func (w *writerWorker) Push(f func()) {
-	w.l.RLock()
-	if w.closed {
-		w.l.RUnlock()
+	if w.closed.IsSet() {
 		return
 	}
 	w.l.RUnlock()
@@ -40,18 +39,15 @@ func (w *writerWorker) Start() {
 }
 
 func (w *writerWorker) WaitClose() {
-	w.l.Lock()
-	w.closed = true
-	w.l.Unlock()
-
+	w.closed.Set()
 	close(w.ch)
 	<-w.closing
 }
 
 type writerSupervisor struct {
-	m      map[io.Writer]*writerWorker
-	mu     sync.RWMutex
-	closed bool
+	m  map[io.Writer]*writerWorker
+	mu sync.RWMutex
+	closed
 }
 
 func (ws *writerSupervisor) WaitClose() {
@@ -86,8 +82,7 @@ func (ws *writerSupervisor) Do(w io.Writer, f func()) {
 		worker = &writerWorker{
 			ch:      make(chan func(), maxRecordChanSize),
 			closing: make(chan bool),
-			closed:  false,
-			l:       sync.RWMutex{},
+			closed:  abool.New(),
 		}
 
 		ws.mu.Lock()
