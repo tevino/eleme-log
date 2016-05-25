@@ -22,13 +22,12 @@ func (w *writerWorker) Push(f func()) {
 		w.l.RUnlock()
 		return
 	}
+	w.l.RUnlock()
 	select {
 	case w.ch <- f:
 	default:
 		//throw message if full
 	}
-	w.l.RUnlock()
-
 }
 
 func (w *writerWorker) Start() {
