@@ -21,7 +21,7 @@ func (w *writerWorker) Push(f func()) {
 	if w.closed.IsSet() {
 		return
 	}
-	w.l.RUnlock()
+
 	select {
 	case w.ch <- f:
 	default:
@@ -45,22 +45,17 @@ func (w *writerWorker) WaitClose() {
 }
 
 type writerSupervisor struct {
-	m  map[io.Writer]*writerWorker
-	mu sync.RWMutex
-	closed
+	m      map[io.Writer]*writerWorker
+	mu     sync.RWMutex
+	closed *abool.AtomicBool
 }
 
 func (ws *writerSupervisor) WaitClose() {
-	ws.mu.RLock()
-	if ws.closed {
-		ws.mu.RUnlock()
+	if ws.closed.IsSet() {
 		return
 	}
-	ws.mu.RUnlock()
 
-	ws.mu.Lock()
-	ws.closed = true
-	ws.mu.Unlock()
+	ws.closed.Set()
 
 	ws.mu.RLock()
 	defer ws.mu.RUnlock()
@@ -70,11 +65,11 @@ func (ws *writerSupervisor) WaitClose() {
 }
 
 func (ws *writerSupervisor) Do(w io.Writer, f func()) {
-	ws.mu.RLock()
-	if ws.closed {
-		ws.mu.RUnlock()
+	if ws.closed.IsSet() {
 		return
 	}
+
+	ws.mu.RLock()
 	worker, ok := ws.m[w]
 	ws.mu.RUnlock()
 
@@ -102,6 +97,6 @@ func newWriterSupervisor() *writerSupervisor {
 	return &writerSupervisor{
 		m:      make(map[io.Writer]*writerWorker),
 		mu:     sync.RWMutex{},
-		closed: false,
+		closed: abool.New(),
 	}
 }
