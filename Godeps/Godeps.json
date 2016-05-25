@@ -1,6 +1,7 @@
 {
 	"ImportPath": "github.com/eleme/log",
 	"GoVersion": "go1.6",
+	"GodepVersion": "v63",
 	"Deps": [
 		{
 			"ImportPath": "github.com/davecgh/go-spew/spew",
@@ -14,6 +15,10 @@
 			"ImportPath": "github.com/stretchr/testify/assert",
 			"Comment": "v1.0-83-gd797d25",
 			"Rev": "d797d25e0fa6d53be3b1a216d24e868d6a1912ef"
+		},
+		{
+			"ImportPath": "github.com/tevino/abool",
+			"Rev": "bb33e2abb1a0b138740d41dd5924397fb08e9822"
 		}
 	]
 }
