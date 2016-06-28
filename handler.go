@@ -2,12 +2,22 @@ package log
 
 import "io"
 
-var writerLocks *writerLocker
-var wSupervisor *writerSupervisor
+var (
+	writerLocks       *writerLocker
+	wSupervisor       *writerSupervisor
+	defaultBufferSize = 1024
+)
 
 func init() {
 	writerLocks = newWriterLocker()
-	wSupervisor = newWriterSupervisor()
+	wSupervisor = newWriterSupervisor(defaultBufferSize)
+}
+
+// SetBufferSize sets the default buffer size for async logging
+// Default to 1024
+// NOTE: Call this before logging anything
+func SetBufferSize(size int) {
+	wSupervisor.bufferSize = size
 }
 
 //Wait wait for all writer worker close

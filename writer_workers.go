@@ -7,10 +7,6 @@ import (
 	"github.com/tevino/abool"
 )
 
-const (
-	maxRecordChanSize = 100000
-)
-
 type writerWorker struct {
 	ch      chan func()
 	closing chan bool
@@ -45,9 +41,10 @@ func (w *writerWorker) WaitClose() {
 }
 
 type writerSupervisor struct {
-	m      map[io.Writer]*writerWorker
-	mu     sync.RWMutex
-	closed *abool.AtomicBool
+	m          map[io.Writer]*writerWorker
+	mu         sync.RWMutex
+	closed     *abool.AtomicBool
+	bufferSize int
 }
 
 func (ws *writerSupervisor) WaitClose() {
@@ -75,7 +72,7 @@ func (ws *writerSupervisor) Do(w io.Writer, f func()) {
 
 	if !ok {
 		worker = &writerWorker{
-			ch:      make(chan func(), maxRecordChanSize),
+			ch:      make(chan func(), ws.bufferSize),
 			closing: make(chan bool),
 			closed:  abool.New(),
 		}
@@ -93,10 +90,11 @@ func (ws *writerSupervisor) Do(w io.Writer, f func()) {
 	worker.Push(f)
 }
 
-func newWriterSupervisor() *writerSupervisor {
+func newWriterSupervisor(bufferSize int) *writerSupervisor {
 	return &writerSupervisor{
-		m:      make(map[io.Writer]*writerWorker),
-		mu:     sync.RWMutex{},
-		closed: abool.New(),
+		m:          make(map[io.Writer]*writerWorker),
+		mu:         sync.RWMutex{},
+		closed:     abool.New(),
+		bufferSize: bufferSize,
 	}
 }
