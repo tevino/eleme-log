@@ -339,7 +339,7 @@ func (w *emptyWriter) Write(p []byte) (n int, err error) {
 
 func initLockVisor() {
 	writerLocks = newWriterLocker()
-	wSupervisor = newWriterSupervisor()
+	wSupervisor = newWriterSupervisor(defaultBufferSize)
 }
 
 func BenchmarkLogSync(b *testing.B) {
